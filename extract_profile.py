@@ -5,7 +5,7 @@ Extract complete Hypixel SkyBlock profile data for AI analysis
 
 Author: SkyBlock Profile Extractor Team
 Repository: https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor
-Version: 1.0
+Version: 1
 """
 
 import requests
@@ -14,13 +14,14 @@ import os
 import time
 import sys
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from pathlib import Path
+import argparse
 
 # Configuration
-VERSION = "1.0"
+VERSION = "1"
 BASE_URL = "https://cupcake.shiiyu.moe/api"
-USER_AGENT = "SkyBlock-Profile-Extractor/1.0"
+USER_AGENT = f"SkyBlock-Profile-Extractor/{VERSION}"
 RATE_LIMIT = 0.5  # seconds between requests
 TIMEOUT = 30  # seconds
 
@@ -38,28 +39,28 @@ class Colors:
 def print_header(title: str, silent: bool = False) -> None:
     """Print a formatted header."""
     if not silent:
-        print(f"\n{Colors.HEADER}🚀 {title}{Colors.END}")
-        print(f"{Colors.HEADER}{'─' * 50}{Colors.END}")
+        print(f"\n{Colors.HEADER}>> {title}{Colors.END}")
+        print(f"{Colors.HEADER}{'-' * 50}{Colors.END}")
 
 def print_success(message: str, silent: bool = False) -> None:
     """Print a success message."""
     if not silent:
-        print(f"{Colors.SUCCESS}✅ {message}{Colors.END}")
+        print(f"{Colors.SUCCESS}[+] {message}{Colors.END}")
 
 def print_info(message: str, silent: bool = False) -> None:
     """Print an info message."""
     if not silent:
-        print(f"{Colors.INFO}📊 {message}{Colors.END}")
+        print(f"{Colors.INFO}[i] {message}{Colors.END}")
 
 def print_warning(message: str) -> None:
     """Print a warning message."""
-    print(f"{Colors.WARNING}⚠️ {message}{Colors.END}")
+    print(f"{Colors.WARNING}[!] {message}{Colors.END}")
 
 def print_error(message: str) -> None:
     """Print an error message."""
-    print(f"{Colors.ERROR}❌ {message}{Colors.END}")
+    print(f"{Colors.ERROR}[X] {message}{Colors.END}")
 
-def make_api_call(endpoint: str, context: str = "API call") -> Optional[Dict]:
+def make_api_call(endpoint: str, context: str = "API call", ignore_403: bool = False) -> Optional[Dict]:
     """Make an API call with proper error handling and rate limiting."""
     try:
         headers = {'User-Agent': USER_AGENT}
@@ -69,21 +70,18 @@ def make_api_call(endpoint: str, context: str = "API call") -> Optional[Dict]:
         time.sleep(RATE_LIMIT)
         return response.json()
     
-    except requests.exceptions.Timeout:
-        raise Exception(f"{context} timed out")
-    except requests.exceptions.ConnectionError:
-        raise Exception(f"{context} failed - connection error")
     except requests.exceptions.HTTPError as e:
+        if ignore_403 and e.response.status_code == 403:
+            raise Exception("403 Forbidden")
         if e.response.status_code == 403:
             raise Exception(f"{context} failed - API access denied (check SkyBlock API settings)")
         elif e.response.status_code == 404:
             raise Exception(f"{context} failed - data not found")
         else:
             raise Exception(f"{context} failed - HTTP {e.response.status_code}")
-    except json.JSONDecodeError:
-        raise Exception(f"{context} failed - invalid response format")
     except Exception as e:
         raise Exception(f"{context} failed - {str(e)}")
+
 
 def get_player_uuid(username: str, silent: bool = False) -> Optional[Dict]:
     """Get player UUID from username."""
@@ -104,35 +102,50 @@ def get_player_uuid(username: str, silent: bool = False) -> Optional[Dict]:
         return None
 
 def get_player_profiles(uuid: str, username: str, silent: bool = False) -> Optional[List[Dict]]:
-    """Get player's SkyBlock profiles."""
+    """Get player's SkyBlock profiles with fallback."""
     print_info("Fetching SkyBlock profiles...", silent)
     
+    # Try comprehensive endpoint first
     try:
-        # Try to get profile data from stats endpoint
-        response = make_api_call(f"{BASE_URL}/stats/{uuid}", "Profile lookup")
-        
+        response = make_api_call(f"{BASE_URL}/profiles/{uuid}", "Full profile lookup", ignore_403=True)
+        if response and 'profiles' in response and response['profiles']:
+            profile_list = []
+            for profile_id, profile_data in response['profiles'].items():
+                profile_list.append({
+                    'profile_id': profile_data.get('profile_id'),
+                    'profile_cute_name': profile_data.get('cute_name'),
+                    'selected': profile_data.get('selected', False)
+                })
+            print_success(f"Found {len(profile_list)} profiles.", silent)
+            return profile_list
+    except Exception as e:
+        if "403 Forbidden" in str(e):
+            print_warning("Could not fetch all profiles (API permissions likely restricted). Falling back to active profile only.")
+        else:
+            print_warning(f"Could not fetch all profiles: {str(e)}. Falling back to active profile only.")
+
+    # Fallback to stats endpoint for active profile
+    try:
+        response = make_api_call(f"{BASE_URL}/stats/{uuid}", "Active profile lookup")
         if response and 'stats' in response:
             profile = {
                 'profile_id': response['stats']['profile_id'],
                 'profile_cute_name': response['stats']['profile_cute_name'],
                 'selected': True
             }
-            
-            print_success(f"Found profile: 🍅 {profile['profile_cute_name']} (Selected)", silent)
+            print_success(f"Found active profile: (T) {profile['profile_cute_name']}", silent)
             return [profile]
         else:
-            raise Exception("No SkyBlock profiles found")
-    
+            raise Exception("No active SkyBlock profile found")
     except Exception as e:
-        print_error(f"Failed to fetch profiles for '{username}': {str(e)}")
-        print_warning("Possible reasons:")
-        print_warning("  • API access not enabled in SkyBlock settings")
-        print_warning("  • Player has no SkyBlock profiles")
-        print_warning("  • Temporary API issue")
+        print_error(f"Failed to fetch any profiles for '{username}': {str(e)}")
         return None
+
 
 def select_profile(profiles: List[Dict], requested_profile: str = None, silent: bool = False) -> Optional[Dict]:
     """Select a profile from the available profiles."""
+    if not profiles:
+        return None
     if len(profiles) == 1:
         return profiles[0]
     
@@ -146,9 +159,9 @@ def select_profile(profiles: List[Dict], requested_profile: str = None, silent: 
             print(f"  {i}. {profile['profile_cute_name']}")
     
     if not silent:
-        print(f"\n{Colors.INFO}📋 Available profiles:{Colors.END}")
+        print(f"\n{Colors.INFO}[i] Available profiles:{Colors.END}")
         for i, profile in enumerate(profiles, 1):
-            emoji = "🍅" if profile.get('selected') else "🥥"
+            emoji = "(T)" if profile.get('selected') else "(C)"
             selected = " (Selected)" if profile.get('selected') else ""
             print(f"  {i}. {emoji} {profile['profile_cute_name']}{selected}")
         
@@ -166,13 +179,18 @@ def select_profile(profiles: List[Dict], requested_profile: str = None, silent: 
                 print("\nOperation cancelled.")
                 return None
     else:
-        # In silent mode, use the first (usually selected) profile
+        # In silent mode, use the selected profile or the first one
+        for profile in profiles:
+            if profile.get('selected'):
+                return profile
         return profiles[0]
 
-def create_output_directory() -> Optional[str]:
-    """Create a timestamped output directory."""
+def create_output_directory(username: str, profile_name: str) -> Optional[str]:
+    """Create a timestamped output directory with username and profile name."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = f"skyblock_data_{timestamp}"
+    # Sanitize profile name
+    safe_profile_name = "".join(c for c in profile_name if c.isalnum() or c in (' ', '_')).rstrip()
+    output_dir = f"{username}_{safe_profile_name}_{timestamp}"
     
     try:
         Path(output_dir).mkdir(exist_ok=True)
@@ -262,10 +280,10 @@ def show_summary(results: Dict[str, int], output_dir: str, username: str, silent
     """Show extraction summary."""
     print_header("Extraction Summary", silent)
     
-    print(f"{Colors.SUCCESS}🎉 Data extraction completed!{Colors.END}")
-    print(f"{Colors.INFO}📁 Output directory: {output_dir}{Colors.END}")
-    print(f"{Colors.INFO}📊 Files extracted: {results['success']}/{results['total']}{Colors.END}")
-    print(f"{Colors.SUCCESS}📈 Success rate: {results['success_rate']}%{Colors.END}")
+    print(f"{Colors.SUCCESS}[*] Data extraction completed!{Colors.END}")
+    print(f"{Colors.INFO}[i] Output directory: {output_dir}{Colors.END}")
+    print(f"{Colors.INFO}[i] Files extracted: {results['success']}/{results['total']}{Colors.END}")
+    print(f"{Colors.SUCCESS}[>] Success rate: {results['success_rate']}%{Colors.END}")
     
     # Calculate directory size
     total_size = sum(f.stat().st_size for f in Path(output_dir).rglob('*') if f.is_file())
@@ -273,16 +291,16 @@ def show_summary(results: Dict[str, int], output_dir: str, username: str, silent
     size_mb = round(total_size / (1024 * 1024), 1)
     
     size_display = f"{size_mb} MB" if size_mb > 1 else f"{size_kb} KB"
-    print(f"{Colors.INFO}💾 Total size: {size_display}{Colors.END}")
+    print(f"{Colors.INFO}[S] Total size: {size_display}{Colors.END}")
     
-    print(f"\n{Colors.ACCENT}🤖 Ready for AI analysis!{Colors.END}")
+    print(f"\n{Colors.ACCENT}[A] Ready for AI analysis!{Colors.END}")
     print(f"{Colors.INFO}Your complete SkyBlock profile data is now available for:{Colors.END}")
-    print("  • AI-powered progression analysis")
-    print("  • Personal performance tracking")
-    print("  • Data visualization projects")
-    print("  • Optimization recommendations")
+    print("  - AI-powered progression analysis")
+    print("  - Personal performance tracking")
+    print("  - Data visualization projects")
+    print("  - Optimization recommendations")
     
-    print(f"\n{Colors.HEADER}📎 Next Steps:{Colors.END}")
+    print(f"\n{Colors.HEADER}[N] Next Steps:{Colors.END}")
     print(f"  1. Zip the '{output_dir}' folder for easy sharing")
     print("  2. Upload to your preferred AI assistant (ChatGPT, Claude, etc.)")
     print("  3. Ask for progression analysis and recommendations!")
@@ -308,7 +326,6 @@ def test_prerequisites() -> bool:
 
 def main() -> None:
     """Main execution function."""
-    import argparse
     
     parser = argparse.ArgumentParser(
         description="Extract complete Hypixel SkyBlock profile data for AI analysis",
@@ -357,7 +374,7 @@ def main() -> None:
             sys.exit(1)
         
         # Create output directory
-        output_dir = create_output_directory()
+        output_dir = create_output_directory(username, selected_profile['profile_cute_name'])
         if not output_dir:
             sys.exit(1)
         
