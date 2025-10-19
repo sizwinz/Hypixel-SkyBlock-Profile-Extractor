@@ -61,8 +61,8 @@ function Write-Header {
     param([string]$Title)
     
     if (-not $Silent) {
-        Write-Host "`n🚀 $Title" -ForegroundColor $Colors.Header
-        Write-Host ("━" * 50) -ForegroundColor $Colors.Header
+        Write-Host "`n[ROCKET] $Title" -ForegroundColor $Colors.Header
+        Write-Host ("=" * 50) -ForegroundColor $Colors.Header
     }
 }
 
@@ -70,7 +70,7 @@ function Write-Success {
     param([string]$Message)
     
     if (-not $Silent) {
-        Write-Host "✅ $Message" -ForegroundColor $Colors.Success
+        Write-Host "[CHECK] $Message" -ForegroundColor $Colors.Success
     }
 }
 
@@ -78,20 +78,20 @@ function Write-Info {
     param([string]$Message)
     
     if (-not $Silent) {
-        Write-Host "📊 $Message" -ForegroundColor $Colors.Info
+        Write-Host "[INFO] $Message" -ForegroundColor $Colors.Info
     }
 }
 
 function Write-Warning {
     param([string]$Message)
     
-    Write-Host "⚠️ $Message" -ForegroundColor $Colors.Warning
+    Write-Host "[WARNING] $Message" -ForegroundColor $Colors.Warning
 }
 
 function Write-Error-Custom {
     param([string]$Message)
     
-    Write-Host "❌ $Message" -ForegroundColor $Colors.Error
+    Write-Host "[ERROR] $Message" -ForegroundColor $Colors.Error
 }
 
 function Get-UserInput {
@@ -173,7 +173,7 @@ function Get-PlayerProfiles {
                 selected = $true
             }
             
-            Write-Success "Found profile: 🍅 $($profile.profile_cute_name) (Selected)"
+            Write-Success "Found profile: [TOMATO] $($profile.profile_cute_name) (Selected)"
             return @($profile)
         }
         else {
@@ -183,9 +183,9 @@ function Get-PlayerProfiles {
     catch {
         Write-Error-Custom "Failed to fetch profiles for '$Username': $($_.Exception.Message)"
         Write-Warning "Possible reasons:"
-        Write-Warning "  • API access not enabled in SkyBlock settings"
-        Write-Warning "  • Player has no SkyBlock profiles"
-        Write-Warning "  • Temporary API issue"
+        Write-Warning "  - API access not enabled in SkyBlock settings"
+        Write-Warning "  - Player has no SkyBlock profiles"
+        Write-Warning "  - Temporary API issue"
         return $null
     }
 }
@@ -214,9 +214,9 @@ function Select-Profile {
     }
     
     if (-not $Silent) {
-        Write-Host "`n📋 Available profiles:" -ForegroundColor $Colors.Info
+        Write-Host "`n[CLIPBOARD] Available profiles:" -ForegroundColor $Colors.Info
         for ($i = 0; $i -lt $Profiles.Count; $i++) {
-            $emoji = if ($Profiles[$i].selected) { "🍅" } else { "🥥" }
+            $emoji = if ($Profiles[$i].selected) { "[TOMATO]" } else { "[COCONUT]" }
             $selected = if ($Profiles[$i].selected) { " (Selected)" } else { "" }
             Write-Host "  $($i + 1). $emoji $($Profiles[$i].profile_cute_name)$selected"
         }
@@ -286,12 +286,12 @@ function Start-DataExtraction {
         @{ Endpoint = "stats/$UUID/$ProfileId"; File = "stats.json"; Description = "Profile Statistics" },
         @{ Endpoint = "playerStats/$UUID/$ProfileId"; File = "player_stats.json"; Description = "Player Performance" },
         @{ Endpoint = "networth/$UUID/$ProfileId"; File = "networth.json"; Description = "Networth Analysis" },
-        @{ Endpoint = "skills/$UUID/$ProfileId"; File = "skills.json"; Description = "Skills & XP" },
+        @{ Endpoint = "skills/$UUID/$ProfileId"; File = "skills.json"; Description = "Skills and XP" },
         @{ Endpoint = "dungeons/$UUID/$ProfileId"; File = "dungeons.json"; Description = "Dungeon Progress" },
         @{ Endpoint = "slayer/$UUID/$ProfileId"; File = "slayer.json"; Description = "Slayer Statistics" },
         @{ Endpoint = "collections/$UUID/$ProfileId"; File = "collections.json"; Description = "Collection Progress" },
-        @{ Endpoint = "gear/$UUID/$ProfileId"; File = "gear.json"; Description = "Equipment & Gear" },
-        @{ Endpoint = "accessories/$UUID/$ProfileId"; File = "accessories.json"; Description = "Accessories & Talismans" },
+        @{ Endpoint = "gear/$UUID/$ProfileId"; File = "gear.json"; Description = "Equipment and Gear" },
+        @{ Endpoint = "accessories/$UUID/$ProfileId"; File = "accessories.json"; Description = "Accessories and Talismans" },
         @{ Endpoint = "pets/$UUID/$ProfileId"; File = "pets.json"; Description = "Pet Collection" },
         @{ Endpoint = "minions/$UUID/$ProfileId"; File = "minions.json"; Description = "Minion Data" },
         @{ Endpoint = "bestiary/$UUID/$ProfileId"; File = "bestiary.json"; Description = "Bestiary Progress" },
@@ -347,28 +347,28 @@ function Show-Summary {
     
     Write-Header "Extraction Summary"
     
-    Write-Host "🎉 Data extraction completed!" -ForegroundColor $Colors.Success
-    Write-Host "📁 Output directory: $OutputDir" -ForegroundColor $Colors.Info
-    Write-Host "📊 Files extracted: $($Results.Success)/$($Results.Total)" -ForegroundColor $Colors.Info
-    Write-Host "📈 Success rate: $($Results.SuccessRate)%" -ForegroundColor $Colors.Success
+    Write-Host "[PARTY] Data extraction completed!" -ForegroundColor $Colors.Success
+    Write-Host "[FOLDER] Output directory: $OutputDir" -ForegroundColor $Colors.Info
+    Write-Host "[CHART] Files extracted: $($Results.Success)/$($Results.Total)" -ForegroundColor $Colors.Info
+    Write-Host "[GRAPH] Success rate: $($Results.SuccessRate)%" -ForegroundColor $Colors.Success
     
     $dirInfo = Get-ChildItem $OutputDir | Measure-Object -Property Length -Sum
     $sizeKB = [math]::Round($dirInfo.Sum / 1KB, 1)
     $sizeMB = [math]::Round($dirInfo.Sum / 1MB, 1)
     
     $sizeDisplay = if ($sizeMB -gt 1) { "$sizeMB MB" } else { "$sizeKB KB" }
-    Write-Host "💾 Total size: $sizeDisplay" -ForegroundColor $Colors.Info
+    Write-Host "[DISK] Total size: $sizeDisplay" -ForegroundColor $Colors.Info
     
-    Write-Host "`n🤖 Ready for AI analysis!" -ForegroundColor $Colors.Accent
+    Write-Host "`n[ROBOT] Ready for AI analysis!" -ForegroundColor $Colors.Accent
     Write-Host "Your complete SkyBlock profile data is now available for:" -ForegroundColor $Colors.Info
-    Write-Host "  • AI-powered progression analysis"
-    Write-Host "  • Personal performance tracking"
-    Write-Host "  • Data visualization projects"
-    Write-Host "  • Optimization recommendations"
+    Write-Host "  - AI-powered progression analysis"
+    Write-Host "  - Personal performance tracking"
+    Write-Host "  - Data visualization projects"
+    Write-Host "  - Optimization recommendations"
     
-    Write-Host "`n📎 Next Steps:" -ForegroundColor $Colors.Header
+    Write-Host "`n[MEMO] Next Steps:" -ForegroundColor $Colors.Header
     Write-Host "  1. Zip the '$OutputDir' folder for easy sharing"
-    Write-Host "  2. Upload to your preferred AI assistant (ChatGPT, Claude, etc.)"
+    Write-Host "  2. Upload to your preferred AI assistant (ChatGPT or Claude etc.)"
     Write-Host "  3. Ask for progression analysis and recommendations!"
     
     if (-not $Silent) {
