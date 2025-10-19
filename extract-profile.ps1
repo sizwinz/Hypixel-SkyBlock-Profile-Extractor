@@ -20,13 +20,13 @@
     .\extract-profile.ps1
     
 .EXAMPLE
-    .\extract-profile.ps1 -Username "Sahaj33"
+    .\extract-profile.ps1 -Username "TechnoBlade"
     
 .EXAMPLE
-    .\extract-profile.ps1 -Username "Sahaj33" -Profile "Tomato" -Silent
+    .\extract-profile.ps1 -Username "TechnoBlade" -Profile "Watermelon" -Silent
 
 .NOTES
-    Version: 1.0
+    Version: 1 - Hybrid profile fetching
     Author: SkyBlock Profile Extractor Team
     Repository: https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor
 #>
@@ -42,9 +42,9 @@ param(
 )
 
 # Script configuration
-$Script:Version = "1.0"
+$Script:Version = "1"
 $Script:BaseUrl = "https://cupcake.shiiyu.moe/api"
-$Script:UserAgent = "SkyBlock-Profile-Extractor/1.0"
+$Script:UserAgent = "SkyBlock-Profile-Extractor/1"
 $Script:RateLimit = 500  # milliseconds between requests
 
 # Color scheme
@@ -114,7 +114,8 @@ function Get-UserInput {
 function Invoke-ApiCall {
     param(
         [string]$Endpoint,
-        [string]$ErrorContext = "API call"
+        [string]$ErrorContext = "API call",
+        [switch]$Ignore403
     )
     
     try {
@@ -127,6 +128,9 @@ function Invoke-ApiCall {
         return $response
     }
     catch {
+        if ($Ignore403 -and $_.Exception.Response -and $_.Exception.Response.StatusCode -eq 403) {
+            throw "403 Forbidden"
+        }
         throw "$ErrorContext failed: $($_.Exception.Message)"
     }
 }
@@ -162,9 +166,35 @@ function Get-PlayerProfiles {
     
     Write-Info "Fetching SkyBlock profiles..."
     
+    # Try the comprehensive endpoint first
     try {
-        # First try to get profile data from stats endpoint
-        $response = Invoke-ApiCall -Endpoint "$Script:BaseUrl/stats/$UUID" -ErrorContext "Profile lookup"
+        $response = Invoke-ApiCall -Endpoint "$Script:BaseUrl/profiles/$UUID" -ErrorContext "Full profile lookup" -Ignore403
+        
+        if ($response.profiles) {
+            $profileList = @()
+            foreach ($profileId in $response.profiles.Keys) {
+                $profileData = $response.profiles[$profileId]
+                $profileList += @{
+                    profile_id = $profileData.profile_id
+                    profile_cute_name = $profileData.cute_name
+                    selected = $profileData.selected
+                }
+            }
+            Write-Success "Found $($profileList.Count) profiles."
+            return $profileList
+        }
+    }
+    catch {
+        if ($_.Exception.Message -eq "403 Forbidden") {
+            Write-Warning "Could not fetch all profiles (API permissions likely restricted). Falling back to active profile only."
+        } else {
+            Write-Warning "Could not fetch all profiles: $($_.Exception.Message). Falling back to active profile only."
+        }
+    }
+    
+    # Fallback to the stats endpoint for the active profile
+    try {
+        $response = Invoke-ApiCall -Endpoint "$Script:BaseUrl/stats/$UUID" -ErrorContext "Active profile lookup"
         
         if ($response.stats) {
             $profile = @{
@@ -173,7 +203,7 @@ function Get-PlayerProfiles {
                 selected = $true
             }
             
-            Write-Success "Found profile: (T) $($profile.profile_cute_name) (Selected)"
+            Write-Success "Found active profile: (T) $($profile.profile_cute_name)"
             return @($profile)
         }
         else {
@@ -181,14 +211,11 @@ function Get-PlayerProfiles {
         }
     }
     catch {
-        Write-Error-Custom "Failed to fetch profiles for '$Username': $($_.Exception.Message)"
-        Write-Warning "Possible reasons:"
-        Write-Warning "  - API access not enabled in SkyBlock settings"
-        Write-Warning "  - Player has no SkyBlock profiles"
-        Write-Warning "  - Temporary API issue"
+        Write-Error-Custom "Failed to fetch any profiles for '$Username': $($_.Exception.Message)"
         return $null
     }
 }
+
 
 function Select-Profile {
     param(
@@ -196,6 +223,9 @@ function Select-Profile {
         [string]$RequestedProfile
     )
     
+    if ($Profiles.Count -eq 0) {
+        return $null
+    }
     if ($Profiles.Count -eq 1) {
         return $Profiles[0]
     }
@@ -223,20 +253,31 @@ function Select-Profile {
         
         do {
             $choice = Get-UserInput "Select profile [1]" "1"
-            $index = [int]$choice - 1
+            try {
+                $index = [int]$choice - 1
+            } catch {
+                $index = -1
+            }
         } while ($index -lt 0 -or $index -ge $Profiles.Count)
         
         return $Profiles[$index]
     }
     else {
-        # In silent mode, use the first (usually selected) profile
+        # In silent mode, use the selected profile or the first one if none is selected
+        $selected = $Profiles | Where-Object { $_.selected }
+        if ($selected) {
+            return $selected
+        }
         return $Profiles[0]
     }
 }
 
 function New-OutputDirectory {
+    param([string]$Username, [string]$ProfileName)
     $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    $outputDir = "skyblock_data_$timestamp"
+    # Sanitize profile name for directory
+    $safeProfileName = $ProfileName -replace '[\\/:*?"<>|]', ''
+    $outputDir = "$($Username)_$($safeProfileName)_$timestamp"
     
     try {
         New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
@@ -434,7 +475,7 @@ try {
     }
     
     # Create output directory
-    $outputDir = New-OutputDirectory
+    $outputDir = New-OutputDirectory -Username $Username -ProfileName $selectedProfile.profile_cute_name
     if (-not $outputDir) {
         exit 1
     }
