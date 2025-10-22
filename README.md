@@ -1,10 +1,10 @@
-# 🚀 SkyBlock Profile Extractor
+# 🚀 Hypixel SkyBlock Profile Extractor
 
 > **Extract your complete Hypixel SkyBlock profile data in seconds!**
 
 Get every stat, item, skill, and progression detail from your SkyBlock profile for AI analysis, personal tracking, or data visualization. Works seamlessly with the SkyCrypt API.
 
-[![GitHub stars](https://img.shields.io/github/stars/Sahaj33-op/SkyBlock-Profile-Extractor?style=social)](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor?style=social)](https://github.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5391FE?logo=powershell&logoColor=white)](https://docs.microsoft.com/en-us/powershell/)
 [![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](https://python.org)
@@ -54,7 +54,7 @@ Get every stat, item, skill, and progression detail from your SkyBlock profile f
 
 ```powershell
 # Download and run the extractor
-iwr -Uri "https://raw.githubusercontent.com/Sahaj33-op/SkyBlock-Profile-Extractor/main/extract-profile.ps1" -OutFile "extract-profile.ps1"
+iwr -Uri "https://raw.githubusercontent.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor/main/extract-profile.ps1" -OutFile "extract-profile.ps1"
 .\extract-profile.ps1
 ```
 
@@ -62,8 +62,8 @@ iwr -Uri "https://raw.githubusercontent.com/Sahaj33-op/SkyBlock-Profile-Extracto
 
 ```bash
 # Clone the repository
-git clone https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor.git
-cd SkyBlock-Profile-Extractor
+git clone https://github.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor.git
+cd Hypixel-SkyBlock-Profile-Extractor
 
 # Install requirements
 pip install -r requirements.txt
@@ -209,9 +209,9 @@ print(f"Total Networth: {networth['networth']['networth']:,} coins")
 
 ### Need Help?
 
-- 🐛 [Report Issues](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/issues)
-- 💬 [Join Discussions](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/discussions)
-- 📖 [Check Wiki](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/wiki)
+- 🐛 [Report Issues](https://github.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor/issues)
+- 💬 [Join Discussions](https://github.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor/discussions)
+- 📖 [Check Wiki](https://github.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor/wiki)
 
 ## 🤝 Contributing
 
@@ -249,6 +249,6 @@ If this tool helped you, please:
 
 **Made with ❤️ for the SkyBlock community**
 
-[⭐ Star](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor) • [🐛 Report Bug](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/issues) • [💡 Request Feature](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/issues)
+[⭐ Star](https://github.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor) • [🐛 Report Bug](https://github.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor/issues) • [💡 Request Feature](https://github.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor/issues)
 
 </div>
