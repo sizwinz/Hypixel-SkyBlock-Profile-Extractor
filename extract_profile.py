@@ -20,7 +20,7 @@ import argparse
 
 # Configuration
 VERSION = "1"
-BASE_URL = "https://cupcake.shiiyu.moe/api"
+BASE_URL = "https://sky.shiiyu.moe/api"
 USER_AGENT = f"SkyBlock-Profile-Extractor/{VERSION}"
 RATE_LIMIT = 0.5  # seconds between requests
 TIMEOUT = 30  # seconds
@@ -317,7 +317,7 @@ def test_prerequisites() -> bool:
     
     # Check internet connectivity
     try:
-        requests.head("https://cupcake.shiiyu.moe", timeout=5)
+        requests.head("https://sky.shiiyu.moe", timeout=5)
     except Exception:
         print_error("Cannot connect to SkyCrypt API. Please check your internet connection.")
         return False

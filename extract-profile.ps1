@@ -41,10 +41,12 @@ param(
     [switch]$Silent
 )
 
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
 # Script configuration
 $Script:Version = "1"
-$Script:BaseUrl = "https://cupcake.shiiyu.moe/api"
-$Script:UserAgent = "SkyBlock-Profile-Extractor/1"
+$Script:BaseUrl = "https://sky.shiiyu.moe/api"
+$Script:UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 $Script:RateLimit = 500  # milliseconds between requests
 
 # Color scheme
@@ -427,9 +429,13 @@ function Test-Prerequisites {
     
     # Check internet connectivity
     try {
-        $null = Invoke-RestMethod -Uri "https://cupcake.shiiyu.moe" -Method Head -TimeoutSec 5
+        # Fix: Added User-Agent to satisfy Cloudflare bot protection
+        $headers = @{ 'User-Agent' = $Script:UserAgent }
+        $null = Invoke-RestMethod -Uri "https://sky.shiiyu.moe" -Method Head -TimeoutSec 5 -Headers $headers
     }
     catch {
+        # Optional: Print the actual error for debugging
+        # Write-Warning "Debug Error: $($_.Exception.Message)" 
         Write-Error-Custom "Cannot connect to SkyCrypt API. Please check your internet connection."
         return $false
     }
