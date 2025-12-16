@@ -75,12 +75,11 @@ python extract_profile.py
 
 ## 📋 Usage Example
 
-    ```powershell
-    .\hypixel-extract.ps1
-    ```
+```
+.\hypixel-extract.ps1
+```
 
-
-3. **First Run Setup**:
+## **First Run Setup**:
 * Enter your Minecraft Username.
 * When prompted, paste your **Hypixel API Key** (from Prerequisite #1).
 * The key is saved securely to `api_key.txt` for future runs.
