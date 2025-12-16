@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-    SkyBlock Profile Extractor - PowerShell Edition
-    Extract complete Hypixel SkyBlock profile data for AI analysis
+    SkyBlock Profile Extractor - Official Hypixel API Edition
+    Extract complete Hypixel SkyBlock profile data using official API
 
 .DESCRIPTION
-    This script extracts comprehensive profile data from Hypixel SkyBlock using the SkyCrypt API.
-    Perfect for AI analysis, personal tracking, or data visualization.
+    This script extracts comprehensive profile data from Hypixel SkyBlock using the official Hypixel API.
+    Provides complete access to all profile data including inventories, skills, collections, and more.
 
 .PARAMETER Username
     Minecraft username to extract data for
@@ -17,68 +17,76 @@
     Run in silent mode without interactive prompts
 
 .EXAMPLE
-    .\extract-profile.ps1
+    .\extract-profile-v2.ps1
     
 .EXAMPLE
-    .\extract-profile.ps1 -Username "TechnoBlade"
+    .\extract-profile-v2.ps1 -Username "Technoblade"
     
 .EXAMPLE
-    .\extract-profile.ps1 -Username "TechnoBlade" -Profile "Watermelon" -Silent
+    .\extract-profile-v2.ps1 -Username "Technoblade" -Profile "Coconut" -Silent
 
 .NOTES
-    Version: 1 - Hybrid profile fetching
+    Version: 2.0 - Official Hypixel API
     Author: SkyBlock Profile Extractor Team
-    Repository: https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor
+    API Documentation: https://api.hypixel.net
 #>
 
 param(
-    [Parameter(Position=0)]
+    [Parameter(Position = 0)]
     [string]$Username,
     
-    [Parameter(Position=1)]
+    [Parameter(Position = 1)]
     [string]$Profile,
     
     [switch]$Silent
 )
 
+# Enable TLS 1.2
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-# Script configuration
-$Script:Version = "1"
-$Script:BaseUrl = "https://sky.shiiyu.moe/api"
-$Script:UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-$Script:RateLimit = 500  # milliseconds between requests
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+$Script:Version = "2.0"
+$Script:HypixelApiKey = $null
+$Script:HypixelBaseUrl = "https://api.hypixel.net"
+$Script:MojangBaseUrl = "https://api.mojang.com"
+$Script:UserAgent = "SkyBlock-Profile-Extractor/2.0"
+$Script:RateLimit = 1200  # 1.2 seconds between requests (safe for 300/5min limit)
 
 # Color scheme
 $Colors = @{
-    Header = "Cyan"
+    Header  = "Cyan"
     Success = "Green"
     Warning = "Yellow"
-    Error = "Red"
-    Info = "White"
-    Accent = "Magenta"
+    Error   = "Red"
+    Info    = "White"
+    Accent  = "Magenta"
 }
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
 
 function Write-Header {
     param([string]$Title)
-    
     if (-not $Silent) {
-        Write-Host "`n>> $Title" -ForegroundColor $Colors.Header
-        Write-Host ("-" * 50) -ForegroundColor $Colors.Header
+        Write-Host "`n╔═══════════════════════════════════════════════════╗" -ForegroundColor $Colors.Header
+        Write-Host "  $Title" -ForegroundColor $Colors.Header
+        Write-Host "╚═══════════════════════════════════════════════════╝" -ForegroundColor $Colors.Header
     }
 }
 
 function Write-Success {
     param([string]$Message)
-    
     if (-not $Silent) {
-        Write-Host "[+] $Message" -ForegroundColor $Colors.Success
+        Write-Host "[✓] $Message" -ForegroundColor $Colors.Success
     }
 }
 
 function Write-Info {
     param([string]$Message)
-    
     if (-not $Silent) {
         Write-Host "[i] $Message" -ForegroundColor $Colors.Info
     }
@@ -86,14 +94,12 @@ function Write-Info {
 
 function Write-Warning {
     param([string]$Message)
-    
     Write-Host "[!] $Message" -ForegroundColor $Colors.Warning
 }
 
 function Write-Error-Custom {
     param([string]$Message)
-    
-    Write-Host "[X] $Message" -ForegroundColor $Colors.Error
+    Write-Host "[✗] $Message" -ForegroundColor $Colors.Error
 }
 
 function Get-UserInput {
@@ -113,41 +119,93 @@ function Get-UserInput {
     return $input
 }
 
-function Invoke-ApiCall {
+# ============================================================================
+# API CALL FUNCTIONS
+# ============================================================================
+
+function Invoke-HypixelApiCall {
     param(
         [string]$Endpoint,
         [string]$ErrorContext = "API call",
-        [switch]$Ignore403
+        [int]$RetryCount = 3
+    )
+    
+    $attempt = 0
+    while ($attempt -lt $RetryCount) {
+        try {
+            $url = "$Script:HypixelBaseUrl/$Endpoint"
+            $headers = @{
+                'API-Key'    = $Script:HypixelApiKey
+                'User-Agent' = $Script:UserAgent
+            }
+            
+            $response = Invoke-RestMethod -Uri $url -Method Get -Headers $headers -TimeoutSec 30
+            
+            if (-not $response.success) {
+                if ($response.cause) {
+                    throw "API Error: $($response.cause)"
+                }
+                throw "API returned success=false"
+            }
+            
+            # Rate limiting
+            Start-Sleep -Milliseconds $Script:RateLimit
+            return $response
+        }
+        catch {
+            $attempt++
+            if ($attempt -ge $RetryCount) {
+                throw "$ErrorContext failed after $RetryCount attempts: $($_.Exception.Message)"
+            }
+            
+            Write-Warning "$ErrorContext failed (attempt $attempt/$RetryCount). Retrying in $($attempt * 2) seconds..."
+            Start-Sleep -Seconds ($attempt * 2)
+        }
+    }
+}
+
+function Invoke-MojangApiCall {
+    param(
+        [string]$Endpoint,
+        [string]$ErrorContext = "Mojang API call"
     )
     
     try {
-        $headers = @{
-            'User-Agent' = $Script:UserAgent
-        }
-        
-        $response = Invoke-RestMethod -Uri $Endpoint -Method Get -Headers $headers -TimeoutSec 30
-        Start-Sleep -Milliseconds $Script:RateLimit
+        $url = "$Script:MojangBaseUrl/$Endpoint"
+        $response = Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 10
+        Start-Sleep -Milliseconds 500
         return $response
     }
     catch {
-        if ($Ignore403 -and $_.Exception.Response -and $_.Exception.Response.StatusCode -eq 403) {
-            throw "403 Forbidden"
-        }
         throw "$ErrorContext failed: $($_.Exception.Message)"
     }
 }
 
+# ============================================================================
+# PLAYER LOOKUP FUNCTIONS
+# ============================================================================
+
 function Get-PlayerUUID {
     param([string]$Username)
     
-    Write-Info "Looking up UUID for $Username..."
+    Write-Info "Looking up UUID for '$Username'..."
     
     try {
-        $response = Invoke-ApiCall -Endpoint "$Script:BaseUrl/uuid/$Username" -ErrorContext "UUID lookup"
+        # Use Mojang API to get UUID
+        $response = Invoke-MojangApiCall -Endpoint "users/profiles/minecraft/$Username" -ErrorContext "UUID lookup"
         
-        if ($response.uuid) {
-            Write-Success "Found player: $($response.username) ($($response.uuid.Substring(0,8))...)"
-            return $response
+        if ($response.id) {
+            # Format UUID with dashes
+            $uuid = $response.id
+            $formattedUuid = $uuid.Insert(8, '-').Insert(13, '-').Insert(18, '-').Insert(23, '-')
+            
+            Write-Success "Found player: $($response.name) ($($uuid.Substring(0,8))...)"
+            
+            return @{
+                username     = $response.name
+                uuid         = $formattedUuid
+                uuid_trimmed = $uuid
+            }
         }
         else {
             throw "Player not found"
@@ -155,7 +213,7 @@ function Get-PlayerUUID {
     }
     catch {
         Write-Error-Custom "Failed to find player '$Username': $($_.Exception.Message)"
-        Write-Warning "Make sure the username is spelled correctly and the player exists."
+        Write-Warning "Verify the username is correct and the player has joined Minecraft before."
         return $null
     }
 }
@@ -166,58 +224,62 @@ function Get-PlayerProfiles {
         [string]$Username
     )
     
-    Write-Info "Fetching SkyBlock profiles..."
+    Write-Info "Fetching SkyBlock profiles from Hypixel API..."
     
-    # Try the comprehensive endpoint first
     try {
-        $response = Invoke-ApiCall -Endpoint "$Script:BaseUrl/profiles/$UUID" -ErrorContext "Full profile lookup" -Ignore403
+        $response = Invoke-HypixelApiCall -Endpoint "skyblock/profiles?uuid=$UUID" -ErrorContext "Profile lookup"
         
-        if ($response.profiles) {
+        if ($response.profiles -and $response.profiles.Count -gt 0) {
             $profileList = @()
-            foreach ($profileId in $response.profiles.Keys) {
-                $profileData = $response.profiles[$profileId]
+            
+            foreach ($profile in $response.profiles) {
+                # Determine if this profile is selected (check member data)
+                $memberData = $profile.members.$UUID
+                $isSelected = $false
+                
+                # The selected profile is usually indicated by having the most recent last_save
+                if ($memberData) {
+                    $isSelected = $true  # We'll determine the actual selected one by last_save later
+                }
+                
                 $profileList += @{
-                    profile_id = $profileData.profile_id
-                    profile_cute_name = $profileData.cute_name
-                    selected = $profileData.selected
+                    profile_id = $profile.profile_id
+                    cute_name  = $profile.cute_name
+                    game_mode  = if ($profile.game_mode) { $profile.game_mode } else { "normal" }
+                    selected   = $isSelected
+                    last_save  = if ($memberData.last_save) { $memberData.last_save } else { 0 }
+                    data       = $profile
                 }
             }
-            Write-Success "Found $($profileList.Count) profiles."
-            return $profileList
-        }
-    }
-    catch {
-        if ($_.Exception.Message -eq "403 Forbidden") {
-            Write-Warning "Could not fetch all profiles (API permissions likely restricted). Falling back to active profile only."
-        } else {
-            Write-Warning "Could not fetch all profiles: $($_.Exception.Message). Falling back to active profile only."
-        }
-    }
-    
-    # Fallback to the stats endpoint for the active profile
-    try {
-        $response = Invoke-ApiCall -Endpoint "$Script:BaseUrl/stats/$UUID" -ErrorContext "Active profile lookup"
-        
-        if ($response.stats) {
-            $profile = @{
-                profile_id = $response.stats.profile_id
-                profile_cute_name = $response.stats.profile_cute_name
-                selected = $true
+            
+            # Sort by last_save to find the most recently used profile
+            $profileList = $profileList | Sort-Object -Property last_save -Descending
+            
+            # Mark the first one as selected
+            if ($profileList.Count -gt 0) {
+                $profileList[0].selected = $true
             }
             
-            Write-Success "Found active profile: (T) $($profile.profile_cute_name)"
-            return @($profile)
+            Write-Success "Found $($profileList.Count) SkyBlock profile(s)"
+            return $profileList
         }
         else {
-            throw "No SkyBlock profiles found"
+            throw "No SkyBlock profiles found for this player"
         }
     }
     catch {
-        Write-Error-Custom "Failed to fetch any profiles for '$Username': $($_.Exception.Message)"
+        Write-Error-Custom "Failed to fetch profiles: $($_.Exception.Message)"
+        Write-Warning "Possible causes:"
+        Write-Warning "  1. Player has never played SkyBlock"
+        Write-Warning "  2. All profiles are deleted"
+        Write-Warning "  3. Temporary API issue - try again in a few seconds"
         return $null
     }
 }
 
+# ============================================================================
+# PROFILE SELECTION
+# ============================================================================
 
 function Select-Profile {
     param(
@@ -228,36 +290,39 @@ function Select-Profile {
     if ($Profiles.Count -eq 0) {
         return $null
     }
+    
     if ($Profiles.Count -eq 1) {
+        Write-Info "Only one profile found, auto-selecting: $($Profiles[0].cute_name)"
         return $Profiles[0]
     }
     
+    # If specific profile requested
     if ($RequestedProfile) {
-        $selectedProfile = $Profiles | Where-Object { $_.profile_cute_name -eq $RequestedProfile }
+        $selectedProfile = $Profiles | Where-Object { $_.cute_name -eq $RequestedProfile }
         if ($selectedProfile) {
+            Write-Success "Selected profile: $RequestedProfile"
             return $selectedProfile
         }
         else {
-            Write-Warning "Profile '$RequestedProfile' not found. Available profiles:"
-            for ($i = 0; $i -lt $Profiles.Count; $i++) {
-                Write-Host "  $($i + 1). $($Profiles[$i].profile_cute_name)"
-            }
+            Write-Warning "Profile '$RequestedProfile' not found."
         }
     }
     
+    # Interactive selection
     if (-not $Silent) {
         Write-Host "`n[i] Available profiles:" -ForegroundColor $Colors.Info
         for ($i = 0; $i -lt $Profiles.Count; $i++) {
-            $emoji = if ($Profiles[$i].selected) { "(T)" } else { "(C)" }
-            $selected = if ($Profiles[$i].selected) { " (Selected)" } else { "" }
-            Write-Host "  $($i + 1). $emoji $($Profiles[$i].profile_cute_name)$selected"
+            $emoji = if ($Profiles[$i].selected) { "★" } else { "☆" }
+            $mode = if ($Profiles[$i].game_mode -ne "normal") { " [$($Profiles[$i].game_mode.ToUpper())]" } else { "" }
+            Write-Host "  $($i + 1). $emoji $($Profiles[$i].cute_name)$mode"
         }
         
         do {
-            $choice = Get-UserInput "Select profile [1]" "1"
+            $choice = Get-UserInput "`nSelect profile number [1]" "1"
             try {
                 $index = [int]$choice - 1
-            } catch {
+            }
+            catch {
                 $index = -1
             }
         } while ($index -lt 0 -or $index -ge $Profiles.Count)
@@ -265,21 +330,24 @@ function Select-Profile {
         return $Profiles[$index]
     }
     else {
-        # In silent mode, use the selected profile or the first one if none is selected
-        $selected = $Profiles | Where-Object { $_.selected }
-        if ($selected) {
-            return $selected
-        }
+        # In silent mode, return the selected (most recent) profile
         return $Profiles[0]
     }
 }
 
+# ============================================================================
+# DATA EXTRACTION
+# ============================================================================
+
 function New-OutputDirectory {
-    param([string]$Username, [string]$ProfileName)
+    param(
+        [string]$Username,
+        [string]$ProfileName
+    )
+    
     $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    # Sanitize profile name for directory
-    $safeProfileName = $ProfileName -replace '[\\/:*?"<>|]', ''
-    $outputDir = "$($Username)_$($safeProfileName)_$timestamp"
+    $safeProfileName = $ProfileName -replace '[\\/:*?"<>|]', '_'
+    $outputDir = "SkyBlock_${Username}_${safeProfileName}_${timestamp}"
     
     try {
         New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
@@ -292,169 +360,272 @@ function New-OutputDirectory {
     }
 }
 
-function Save-ProfileData {
-    param(
-        [string]$Endpoint,
-        [string]$OutputFile,
-        [string]$OutputDir,
-        [string]$Description
-    )
-    
-    try {
-        Write-Info "Extracting $Description..."
-        $response = Invoke-ApiCall -Endpoint $Endpoint -ErrorContext $Description
-        
-        $filePath = Join-Path $OutputDir $OutputFile
-        $response | ConvertTo-Json -Depth 10 | Out-File -FilePath $filePath -Encoding UTF8
-        
-        Write-Success "Saved $Description"
-        return $true
-    }
-    catch {
-        Write-Warning "Failed to extract $Description : $($_.Exception.Message)"
-        return $false
-    }
-}
-
 function Start-DataExtraction {
     param(
         [string]$UUID,
-        [string]$ProfileId,
+        [object]$ProfileData,
         [string]$OutputDir
     )
     
     Write-Header "Extracting Profile Data"
     
-    $extractionPlan = @(
-        @{ Endpoint = "stats/$UUID/$ProfileId"; File = "stats.json"; Description = "Profile Statistics" },
-        @{ Endpoint = "playerStats/$UUID/$ProfileId"; File = "player_stats.json"; Description = "Player Performance" },
-        @{ Endpoint = "networth/$UUID/$ProfileId"; File = "networth.json"; Description = "Networth Analysis" },
-        @{ Endpoint = "skills/$UUID/$ProfileId"; File = "skills.json"; Description = "Skills & XP" },
-        @{ Endpoint = "dungeons/$UUID/$ProfileId"; File = "dungeons.json"; Description = "Dungeon Progress" },
-        @{ Endpoint = "slayer/$UUID/$ProfileId"; File = "slayer.json"; Description = "Slayer Statistics" },
-        @{ Endpoint = "collections/$UUID/$ProfileId"; File = "collections.json"; Description = "Collection Progress" },
-        @{ Endpoint = "gear/$UUID/$ProfileId"; File = "gear.json"; Description = "Equipment & Gear" },
-        @{ Endpoint = "accessories/$UUID/$ProfileId"; File = "accessories.json"; Description = "Accessories & Talismans" },
-        @{ Endpoint = "pets/$UUID/$ProfileId"; File = "pets.json"; Description = "Pet Collection" },
-        @{ Endpoint = "minions/$UUID/$ProfileId"; File = "minions.json"; Description = "Minion Data" },
-        @{ Endpoint = "bestiary/$UUID/$ProfileId"; File = "bestiary.json"; Description = "Bestiary Progress" },
-        @{ Endpoint = "crimson_isle/$UUID/$ProfileId"; File = "crimson_isle.json"; Description = "Crimson Isle Progress" },
-        @{ Endpoint = "rift/$UUID/$ProfileId"; File = "rift.json"; Description = "Rift Dimension" },
-        @{ Endpoint = "misc/$UUID/$ProfileId"; File = "misc.json"; Description = "Miscellaneous Data" },
-        @{ Endpoint = "garden/$ProfileId"; File = "garden.json"; Description = "Garden Progress" }
+    $extractedFiles = @()
+    
+    # 1. Save complete profile data (most important!)
+    try {
+        Write-Info "Saving complete profile data..."
+        $profilePath = Join-Path $OutputDir "complete_profile.json"
+        $ProfileData.data | ConvertTo-Json -Depth 100 -Compress:$false | Out-File -FilePath $profilePath -Encoding UTF8
+        Write-Success "Saved complete profile (contains all inventories, skills, collections, banking, etc.)"
+        $extractedFiles += "complete_profile.json"
+    }
+    catch {
+        Write-Error-Custom "Failed to save complete profile: $($_.Exception.Message)"
+    }
+    
+    # 2. Extract additional Hypixel API endpoints
+    $additionalEndpoints = @(
+        @{ 
+            Endpoint    = "player?uuid=$UUID"
+            File        = "player_data.json"
+            Description = "General player data (achievements, network level, etc.)"
+        },
+        @{ 
+            Endpoint    = "skyblock/bingo?uuid=$UUID"
+            File        = "bingo_data.json"
+            Description = "Bingo event data"
+        },
+        @{ 
+            Endpoint    = "skyblock/bazaar"
+            File        = "bazaar_prices.json"
+            Description = "Current bazaar prices"
+        },
+        @{ 
+            Endpoint    = "skyblock/auctions?profile=$($ProfileData.profile_id)"
+            File        = "active_auctions.json"
+            Description = "Active auctions for this profile"
+        },
+        @{ 
+            Endpoint    = "skyblock/news"
+            File        = "skyblock_news.json"
+            Description = "SkyBlock news"
+        }
     )
     
-    # Inventory endpoints
-    $inventoryTypes = @(
-        @{ Type = "inv_contents"; Description = "Main Inventory" },
-        @{ Type = "ender_chest_contents"; Description = "Ender Chest" },
-        @{ Type = "wardrobe_contents"; Description = "Wardrobe" },
-        @{ Type = "personal_vault_contents"; Description = "Personal Vault" },
-        @{ Type = "bag_contents"; Description = "All Bags" },
-        @{ Type = "fishing_bag"; Description = "Fishing Bag" },
-        @{ Type = "potion_bag"; Description = "Potion Bag" },
-        @{ Type = "candy_inventory_contents"; Description = "Candy Inventory" },
-        @{ Type = "quiver"; Description = "Quiver" }
-    )
-    
-    foreach ($inv in $inventoryTypes) {
-        $extractionPlan += @{
-            Endpoint = "inventory/$UUID/$ProfileId/$($inv.Type)"
-            File = "inventory_$($inv.Type).json"
-            Description = $inv.Description
+    foreach ($endpoint in $additionalEndpoints) {
+        try {
+            Write-Info "Extracting: $($endpoint.Description)..."
+            $data = Invoke-HypixelApiCall -Endpoint $endpoint.Endpoint -ErrorContext $endpoint.Description
+            
+            $filePath = Join-Path $OutputDir $endpoint.File
+            $data | ConvertTo-Json -Depth 100 -Compress:$false | Out-File -FilePath $filePath -Encoding UTF8
+            
+            Write-Success "Saved: $($endpoint.File)"
+            $extractedFiles += $endpoint.File
+        }
+        catch {
+            Write-Warning "Failed to extract $($endpoint.Description): $($_.Exception.Message)"
         }
     }
     
-    $successCount = 0
-    $totalCount = $extractionPlan.Count
-    
-    foreach ($item in $extractionPlan) {
-        $endpoint = "$Script:BaseUrl/$($item.Endpoint)"
-        $success = Save-ProfileData -Endpoint $endpoint -OutputFile $item.File -OutputDir $outputDir -Description $item.Description
-        if ($success) { $successCount++ }
+    # 3. Create a README file
+    try {
+        $readmePath = Join-Path $OutputDir "README.txt"
+        $readmeContent = @"
+SKYBLOCK PROFILE EXTRACTION REPORT
+===================================
+Generated: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+Player: $($ProfileData.data.members.$UUID.profile.display_name)
+Profile: $($ProfileData.cute_name) [$($ProfileData.game_mode)]
+Profile ID: $($ProfileData.profile_id)
+
+FILES EXTRACTED:
+----------------
+$($extractedFiles | ForEach-Object { "- $_" } | Out-String)
+
+IMPORTANT NOTES:
+----------------
+1. complete_profile.json contains ALL your SkyBlock data:
+   - All inventories (main, ender chest, backpacks, etc.)
+   - Skills, collections, and slayer progress
+   - Pets, minions, and accessories
+   - Banking, objectives, and quests
+   - Dungeon and crimson isle progress
+   - Garden, museum, and rift data
+
+2. This data respects your in-game API settings.
+   If certain data is missing, ensure all API options are
+   enabled in: SkyBlock Menu → Settings → API Settings
+
+3. Data is extracted using Official Hypixel API
+   API Documentation: https://api.hypixel.net
+
+USING THIS DATA:
+----------------
+- Upload to AI assistants (ChatGPT, Claude) for analysis
+- Import into data visualization tools
+- Use for personal progress tracking
+- Share with SkyBlock helper applications
+
+PRIVACY WARNING:
+----------------
+This data contains sensitive information about your SkyBlock
+progress. Only share with trusted sources!
+
+Script Version: $Script:Version
+Extraction Tool: SkyBlock Profile Extractor
+"@
+        $readmeContent | Out-File -FilePath $readmePath -Encoding UTF8
+        Write-Success "Created README.txt with extraction details"
+    }
+    catch {
+        Write-Warning "Failed to create README file"
     }
     
     return @{
-        Success = $successCount
-        Total = $totalCount
-        SuccessRate = [math]::Round(($successCount / $totalCount) * 100, 1)
+        Success     = $extractedFiles.Count
+        Total       = $additionalEndpoints.Count + 1
+        SuccessRate = [math]::Round(($extractedFiles.Count / ($additionalEndpoints.Count + 1)) * 100, 1)
+        Files       = $extractedFiles
     }
 }
+
+# ============================================================================
+# SUMMARY AND COMPLETION
+# ============================================================================
 
 function Show-Summary {
     param(
         [hashtable]$Results,
         [string]$OutputDir,
-        [string]$Username
+        [string]$Username,
+        [string]$ProfileName
     )
     
-    Write-Header "Extraction Summary"
+    Write-Header "Extraction Complete!"
     
-    Write-Host "[*] Data extraction completed!" -ForegroundColor $Colors.Success
-    Write-Host "[i] Output directory: $OutputDir" -ForegroundColor $Colors.Info
-    Write-Host "[i] Files extracted: $($Results.Success)/$($Results.Total)" -ForegroundColor $Colors.Info
-    Write-Host "[>] Success rate: $($Results.SuccessRate)%" -ForegroundColor $Colors.Success
+    Write-Host "`n📦 Output Directory: " -NoNewline -ForegroundColor $Colors.Info
+    Write-Host $OutputDir -ForegroundColor $Colors.Accent
     
+    Write-Host "📊 Files Extracted: " -NoNewline -ForegroundColor $Colors.Info
+    Write-Host "$($Results.Success)/$($Results.Total)" -ForegroundColor $Colors.Success
+    
+    Write-Host "✅ Success Rate: " -NoNewline -ForegroundColor $Colors.Info
+    Write-Host "$($Results.SuccessRate)%" -ForegroundColor $Colors.Success
+    
+    # Calculate directory size
     $dirInfo = Get-ChildItem $OutputDir | Measure-Object -Property Length -Sum
-    $sizeKB = [math]::Round($dirInfo.Sum / 1KB, 1)
-    $sizeMB = [math]::Round($dirInfo.Sum / 1MB, 1)
+    $sizeMB = [math]::Round($dirInfo.Sum / 1MB, 2)
+    $sizeKB = [math]::Round($dirInfo.Sum / 1KB, 2)
     
-    $sizeDisplay = if ($sizeMB -gt 1) { "$sizeMB MB" } else { "$sizeKB KB" }
-    Write-Host "[S] Total size: $sizeDisplay" -ForegroundColor $Colors.Info
+    $sizeDisplay = if ($sizeMB -gt 0.1) { "$sizeMB MB" } else { "$sizeKB KB" }
+    Write-Host "💾 Total Size: " -NoNewline -ForegroundColor $Colors.Info
+    Write-Host $sizeDisplay -ForegroundColor $Colors.Accent
     
-    Write-Host "`n[A] Ready for AI analysis!" -ForegroundColor $Colors.Accent
-    Write-Host "Your complete SkyBlock profile data is now available for:" -ForegroundColor $Colors.Info
-    Write-Host "  - AI-powered progression analysis"
-    Write-Host "  - Personal performance tracking"
-    Write-Host "  - Data visualization projects"
-    Write-Host "  - Optimization recommendations"
+    Write-Host "`n" -NoNewline
+    Write-Host "═══════════════════════════════════════════════════" -ForegroundColor $Colors.Header
+    Write-Host "🎯 NEXT STEPS:" -ForegroundColor $Colors.Accent
+    Write-Host "═══════════════════════════════════════════════════" -ForegroundColor $Colors.Header
     
-    Write-Host "`n[N] Next Steps:" -ForegroundColor $Colors.Header
-    Write-Host "  1. Zip the '$OutputDir' folder for easy sharing"
-    Write-Host "  2. Upload to your preferred AI assistant (ChatGPT, Claude, etc.)"
-    Write-Host "  3. Ask for progression analysis and recommendations!"
+    Write-Host "`n1. " -NoNewline -ForegroundColor $Colors.Info
+    Write-Host "Review 'complete_profile.json' for all your data"
+    
+    Write-Host "2. " -NoNewline -ForegroundColor $Colors.Info
+    Write-Host "Compress the folder for easy sharing:"
+    Write-Host "   Compress-Archive -Path '$OutputDir' -DestinationPath '${OutputDir}.zip'" -ForegroundColor $Colors.Accent
+    
+    Write-Host "`n3. " -NoNewline -ForegroundColor $Colors.Info
+    Write-Host "Upload to AI for analysis and ask questions like:"
+    Write-Host "   - 'Analyze my skill progression and suggest improvements'" -ForegroundColor $Colors.Accent
+    Write-Host "   - 'What should I focus on to increase my networth?'" -ForegroundColor $Colors.Accent
+    Write-Host "   - 'Review my gear and recommend upgrades'" -ForegroundColor $Colors.Accent
+    
+    Write-Host "`n4. " -NoNewline -ForegroundColor $Colors.Info
+    Write-Host "Check README.txt for detailed information"
+    
+    Write-Host "`n" -NoNewline
+    Write-Host "═══════════════════════════════════════════════════" -ForegroundColor $Colors.Header
     
     if (-not $Silent) {
-        Write-Host "`nPress any key to continue..." -ForegroundColor $Colors.Info
+        Write-Host "`nPress any key to exit..." -ForegroundColor $Colors.Info
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     }
 }
 
 function Test-Prerequisites {
+    Write-Info "Testing prerequisites..."
+    
     # Check PowerShell version
     if ($PSVersionTable.PSVersion.Major -lt 3) {
-        Write-Error-Custom "PowerShell 3.0 or higher is required. Current version: $($PSVersionTable.PSVersion)"
+        Write-Error-Custom "PowerShell 3.0+ required. Current: $($PSVersionTable.PSVersion)"
         return $false
     }
+    Write-Success "PowerShell version OK ($($PSVersionTable.PSVersion))"
     
-    # Check internet connectivity
+    # Check API key
+    if (-not $Script:HypixelApiKey -or $Script:HypixelApiKey.Length -ne 36) {
+        Write-Error-Custom "Invalid Hypixel API key. Get one by typing '/api new' on Hypixel"
+        return $false
+    }
+    Write-Success "API key configured"
+    
+    # Test internet connectivity
     try {
-        # Fix: Added User-Agent to satisfy Cloudflare bot protection
-        $headers = @{ 'User-Agent' = $Script:UserAgent }
-        $null = Invoke-RestMethod -Uri "https://sky.shiiyu.moe" -Method Head -TimeoutSec 5 -Headers $headers
+        $null = Invoke-RestMethod -Uri "https://api.hypixel.net/key" -Headers @{'API-Key' = $Script:HypixelApiKey } -Method Get -TimeoutSec 5
+        Write-Success "API connection successful"
     }
     catch {
-        # Optional: Print the actual error for debugging
-        # Write-Warning "Debug Error: $($_.Exception.Message)" 
-        Write-Error-Custom "Cannot connect to SkyCrypt API. Please check your internet connection."
+        Write-Error-Custom "Cannot connect to Hypixel API. Check your internet connection."
         return $false
     }
     
     return $true
 }
 
-# Main execution
+# ============================================================================
+# MAIN EXECUTION
+# ============================================================================
+
 try {
+    Clear-Host
     Write-Header "SkyBlock Profile Extractor v$Script:Version"
+    Write-Host "Using Official Hypixel API for maximum compatibility`n" -ForegroundColor $Colors.Accent
     
+    $KeyFile = Join-Path $PSScriptRoot "api_key.txt"
+        
+        if (Test-Path $KeyFile) {
+            $Script:HypixelApiKey = Get-Content $KeyFile -Raw
+            $Script:HypixelApiKey = $Script:HypixelApiKey.Trim()
+            Write-Info "Loaded API key from api_key.txt"
+        }
+        else {
+            Write-Warning "Hypixel API Key not found!"
+            Write-Host "1. Go to https://developer.hypixel.net"
+            Write-Host "2. Login and copy your 'Development Key'"
+            
+            $InputKey = Get-UserInput "Enter your Hypixel API Key"
+            
+            if ($InputKey -and $InputKey.Length -gt 30) {
+                $Script:HypixelApiKey = $InputKey.Trim()
+                $Script:HypixelApiKey | Out-File -FilePath $KeyFile -Encoding ASCII
+                Write-Success "API Key saved to api_key.txt"
+            }
+            else {
+                Write-Error-Custom "Invalid API Key provided. Exiting."
+                exit 1
+            }
+        }
+
     # Test prerequisites
     if (-not (Test-Prerequisites)) {
         exit 1
     }
     
+    Write-Host ""
+    
     # Get username
     if (-not $Username) {
-        $Username = Get-UserInput "Enter your Minecraft username"
+        $Username = Get-UserInput "Enter Minecraft username"
         if (-not $Username) {
             Write-Error-Custom "Username is required!"
             exit 1
@@ -467,7 +638,7 @@ try {
         exit 1
     }
     
-    # Get profiles
+    # Get SkyBlock profiles
     $profiles = Get-PlayerProfiles -UUID $playerInfo.uuid -Username $Username
     if (-not $profiles) {
         exit 1
@@ -480,22 +651,30 @@ try {
         exit 1
     }
     
+    Write-Success "Selected profile: $($selectedProfile.cute_name) [$($selectedProfile.game_mode)]"
+    
     # Create output directory
-    $outputDir = New-OutputDirectory -Username $Username -ProfileName $selectedProfile.profile_cute_name
+    $outputDir = New-OutputDirectory -Username $Username -ProfileName $selectedProfile.cute_name
     if (-not $outputDir) {
         exit 1
     }
     
-    # Extract data
-    $results = Start-DataExtraction -UUID $playerInfo.uuid -ProfileId $selectedProfile.profile_id -OutputDir $outputDir
+    # Extract all data
+    $results = Start-DataExtraction -UUID $playerInfo.uuid -ProfileData $selectedProfile -OutputDir $outputDir
     
     # Show summary
-    Show-Summary -Results $results -OutputDir $outputDir -Username $Username
+    Show-Summary -Results $results -OutputDir $outputDir -Username $Username -ProfileName $selectedProfile.cute_name
     
-    Write-Success "SkyBlock Profile extraction completed successfully!"
+    exit 0
 }
 catch {
-    Write-Error-Custom "An unexpected error occurred: $($_.Exception.Message)"
+    Write-Error-Custom "Unexpected error: $($_.Exception.Message)"
     Write-Host "Stack Trace: $($_.ScriptStackTrace)" -ForegroundColor $Colors.Error
+    
+    if (-not $Silent) {
+        Write-Host "`nPress any key to exit..." -ForegroundColor $Colors.Info
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    }
+    
     exit 1
 }
