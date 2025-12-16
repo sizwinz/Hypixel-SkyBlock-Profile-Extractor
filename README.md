@@ -1,4 +1,4 @@
-# 🚀 Hypixel SkyBlock Profile Extractor (Official API Edition)
+# 🚀 SkyBlock Profile Extractor
 
 > **Extract your complete Hypixel SkyBlock profile data securely via the Official API.**
 
@@ -36,26 +36,44 @@ Unlike website scrapers, this tool pulls **raw data** directly from Hypixel serv
 
 ### 📋 Prerequisites
 
-1. **Get a Hypixel API Key** (Required):
-   - Go to the [Hypixel Developer Dashboard](https://developer.hypixel.net)
-   - Log in with your Minecraft account
-   - Click **"Create Development Key"**
-   - Copy the key (UUID format: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+1. **Enable API Access in SkyBlock** (Required!):
+   - Join Hypixel SkyBlock
+   - Right-click the **Nether Star** (SkyBlock Menu)
+   - Click **Redstone Torch** (Settings)
+   - Click **Comparator** (API Settings)
+   - **Enable ALL options** (Skills, Inventory, Collections, Vault, etc.)
+   - Wait 5-10 minutes for changes to take effect
 
-2. **Enable In-Game API Access**:
-   - In SkyBlock, go to **Settings** (Redstone Torch) -> **API Settings** (Comparator)
-   - **Enable ALL options** (Skills, Inventory, Vault, etc.)
+### Option 1: PowerShell (Windows - Recommended)
 
-### 📥 Installation & Usage
+```powershell
+# Download and run the extractor
+iwr -Uri "https://raw.githubusercontent.com/Sahaj33-op/SkyBlock-Profile-Extractor/main/extract-profile.ps1" -OutFile "extract-profile.ps1"
+.\extract-profile.ps1
+```
 
-**Option 1: PowerShell (Recommended)**
+### Option 2: Python (Cross-Platform)
 
-1. Download the script:
-   ```powershell
-   iwr -Uri "[https://raw.githubusercontent.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor/main/hypixel-extract.ps1](https://raw.githubusercontent.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor/main/hypixel-extract.ps1)" -OutFile "hypixel-extract.ps1"
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor.git
+cd SkyBlock-Profile-Extractor
 
-2. Run the script:
+# Install requirements
+pip install -r requirements.txt
+
+# Run the extractor
+python extract_profile.py
+```
+
+### Option 3: Direct Download
+
+1. Download `extract-profile.ps1` or `extract_profile.py` from this repository
+2. Run the script
+3. Enter your Minecraft username when prompted
+4. Wait for extraction to complete
+
+## 📋 Usage Example
 
     ```powershell
     .\hypixel-extract.ps1
@@ -101,17 +119,25 @@ Since you are providing raw API data, you can ask powerful questions to ChatGPT 
 
 ## 🛠️ Troubleshooting
 
-**❌ "Hypixel API Key not found!"**
+### Common Issues
 
-* The script couldn't find `api_key.txt`. It will ask you to enter it manually. Ensure you don't add extra spaces when pasting.
+**❌ "403 Forbidden" Error**
+- ✅ **Solution**: Enable API access in SkyBlock settings and wait 10 minutes
 
-**❌ "API Error: Invalid API Key"**
+**❌ "Profile not found"**  
+- ✅ **Solution**: Check username spelling and ensure you have SkyBlock profiles
 
-* Your key might have expired (Development keys last 3 days). Go to [developer.hypixel.net](https://developer.hypixel.net) and regenerate it, then delete `api_key.txt` and run the script again.
+**❌ "Connection timeout"**
+- ✅ **Solution**: Check internet connection and try again
 
-**❌ "Permissions likely restricted" / Missing Data**
+**❌ Script won't run**
+- ✅ **Solution**: Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` in PowerShell
 
-* You didn't enable the API settings in-game. Go to SkyBlock Menu -> Settings -> API Settings and enable everything. Wait 5-10 minutes.
+### Need Help?
+
+- 🐛 [Report Issues](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/issues)
+- 💬 [Join Discussions](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/discussions)
+- 📖 [Check Wiki](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/wiki)
 
 ## 🤝 Contributing
 
@@ -127,3 +153,27 @@ We welcome contributions!
 
 This project is licensed under the MIT License - see the [LICENSE]() file for details.
 
+## ⭐ Support the Project
+
+If this tool helped you, please:
+- ⭐ Star this repository
+- 🐦 Share it with friends
+- 🐛 Report any issues
+- 💡 Suggest improvements
+
+## 🙏 Acknowledgments
+
+- 🎮 **Hypixel Network** - For creating SkyBlock
+- 🔗 **SkyCrypt Team** - For providing the excellent API
+- 👥 **SkyBlock Community** - For feedback and suggestions
+- 🤖 **AI Community** - For inspiring data-driven gameplay
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the SkyBlock community**
+
+[⭐ Star](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor) • [🐛 Report Bug](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/issues) • [💡 Request Feature](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/issues)
+
+</div>
