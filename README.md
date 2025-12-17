@@ -101,10 +101,8 @@ Since you are providing raw API data, you can ask powerful questions to ChatGPT 
 
 ## Acknowledgments
 
-- 🎮 **Hypixel Network** - For creating SkyBlock
-- 🔗 **SkyCrypt Team** - For providing the excellent API
-- 👥 **SkyBlock Community** - For feedback and suggestions
-- 🤖 **AI Community** - For inspiring data-driven gameplay
+- 🎮 **Hypixel Network**
+- 👥 **SkyBlock Community**
 
 ---
 
