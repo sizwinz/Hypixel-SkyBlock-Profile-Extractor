@@ -31,7 +31,7 @@ Get raw, comprehensive data from your SkyBlock profile for AI analysis, personal
 
 ```powershell
 # Download and run the extractor
-iwr -Uri "https://raw.githubusercontent.com/Sahaj33-op/SkyBlock-Profile-Extractor/main/extract-profile.ps1" -OutFile "extract-profile.ps1"
+iwr -Uri "https://raw.githubusercontent.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor/main/extract-profile.ps1" -OutFile "extract-profile.ps1"
 .\extract-profile.ps1
 ```
 
@@ -39,7 +39,7 @@ iwr -Uri "https://raw.githubusercontent.com/Sahaj33-op/SkyBlock-Profile-Extracto
 
 ```bash
 # Clone the repository
-git clone https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor.git
+git clone https://github.com/Sahaj33-op/Hypixel-SkyBlock-Profile-Extractor.git
 cd SkyBlock-Profile-Extractor
 
 # Install requirements
