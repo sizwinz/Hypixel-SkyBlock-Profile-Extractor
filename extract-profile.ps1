@@ -161,7 +161,7 @@ function Get-PlayerProfiles {
             $profileList = @()
             foreach ($profile in $response.profiles) {
                 # FIXED: Robust dictionary access for dashed UUID keys
-                $memberData = $profile.members[$UUID] 
+                $memberData = $profile.members."$UUID" 
                 
                 $profileList += @{
                     profile_id = $profile.profile_id
@@ -173,7 +173,7 @@ function Get-PlayerProfiles {
             }
             
             # Sort by last_save to auto-select most recent
-            $profileList = $profileList | Sort-Object -Property last_save -Descending
+            $profileList = @($profileList | Sort-Object { $_["last_save"] } -Descending)
             if ($profileList.Count -gt 0) { $profileList[0].add("selected", $true) }
             
             Write-Success "Found $($profileList.Count) SkyBlock profile(s)"
