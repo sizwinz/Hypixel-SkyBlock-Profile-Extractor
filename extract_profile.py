@@ -9,7 +9,7 @@ import argparse
 
 # Configuration
 VERSION = "2.0"
-HYPIXEL_API_URL = "https://api.hypixel.net"
+HYPIXEL_API_URL = "https://api.hypixel.net/v2"
 MOJANG_API_URL = "https://api.mojang.com"
 USER_AGENT = f"SkyBlock-Profile-Extractor/{VERSION}"
 TIMEOUT = 30
@@ -196,9 +196,15 @@ def extract_data(uuid, profile, api_key, username):
     # 2. Auxiliary Data Points
     endpoints = [
         ("player", {'uuid': uuid}, "player_data.json", "Global Player Stats"),
+        ("skyblock/garden", {'profile': profile['id']}, "garden_data.json", "Garden Data"),
+        ("skyblock/museum", {'profile': profile['id']}, "museum_data.json", "Museum Data"),
+        ("guild", {'player': uuid}, "guild_data.json", "Guild Data"),
+        ("recentgames", {'uuid': uuid}, "recent_games.json", "Recent Games"),
+        ("status", {'uuid': uuid}, "online_status.json", "Online Status"),
+        ("skyblock/firesales", {}, "fire_sales.json", "Fire Sales"),
         ("skyblock/bingo", {'uuid': uuid}, "bingo_data.json", "Bingo Data"),
         ("skyblock/bazaar", {}, "bazaar_prices.json", "Bazaar Prices"),
-        ("skyblock/auctions", {'profile': profile['id']}, "active_auctions.json", "Active Auctions"),
+        ("skyblock/auction", {'profile': profile['id']}, "active_auctions.json", "Active Auctions"),
         ("skyblock/news", {}, "skyblock_news.json", "SkyBlock News")
     ]
 

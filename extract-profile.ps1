@@ -246,9 +246,14 @@ function Start-DataExtraction {
     # 2. Additional Endpoints (Updated for v2)
     $endpoints = @(
         @{ Ep = "player?uuid=$UUID"; File = "player_data.json"; Desc = "Player Stats" },
+        @{ Ep = "skyblock/garden?profile=$($ProfileData.profile_id)"; File = "garden_data.json"; Desc = "Garden Data" },
+        @{ Ep = "skyblock/museum?profile=$($ProfileData.profile_id)"; File = "museum_data.json"; Desc = "Museum Data" },
+        @{ Ep = "guild?player=$UUID"; File = "guild_data.json"; Desc = "Guild Data" },
+        @{ Ep = "recentgames?uuid=$UUID"; File = "recent_games.json"; Desc = "Recent Games" },
+        @{ Ep = "status?uuid=$UUID"; File = "online_status.json"; Desc = "Online Status" },
         @{ Ep = "skyblock/bingo?uuid=$UUID"; File = "bingo_data.json"; Desc = "Bingo Data" },
         @{ Ep = "skyblock/bazaar"; File = "bazaar_prices.json"; Desc = "Bazaar" },
-        @{ Ep = "skyblock/auctions?profile=$($ProfileData.profile_id)"; File = "active_auctions.json"; Desc = "Active Auctions" },
+        @{ Ep = "skyblock/auction?profile=$($ProfileData.profile_id)"; File = "active_auctions.json"; Desc = "Active Auctions" },
         @{ Ep = "skyblock/news"; File = "skyblock_news.json"; Desc = "News" }
     )
     
