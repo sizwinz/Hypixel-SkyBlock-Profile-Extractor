@@ -43,7 +43,7 @@ git clone https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor.git
 cd SkyBlock-Profile-Extractor
 
 # Install requirements
-pip install -r requirements.txt
+pip install requests
 
 # Run the extractor
 python extract_profile.py
