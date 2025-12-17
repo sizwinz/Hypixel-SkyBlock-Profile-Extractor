@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""
-SkyBlock Profile Extractor - Python Edition (v2.0)
-Extract complete Hypixel SkyBlock profile data via Official API
-
-Author: SkyBlock Profile Extractor Team
-Repository: https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor
-Version: 2.0
-"""
-
 import requests
 import json
 import os
