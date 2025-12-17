@@ -1,4 +1,4 @@
-# 🚀 SkyBlock Profile Extractor
+# SkyBlock Profile Extractor
 
 > **Extract your complete Hypixel SkyBlock profile data securely via the Official API.**
 
@@ -8,31 +8,14 @@ Get raw, comprehensive data from your SkyBlock profile for AI analysis, personal
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5391FE?logo=powershell&logoColor=white)](https://docs.microsoft.com/en-us/powershell/)
 
-## ✨ Features
+## What Data You'll Get
 
-- 🛡️ **Official API Integration** - Uses `api.hypixel.net` for maximum stability (No more 403 Forbidden errors!)
-- 🔐 **Secure Key Storage** - Asks for your API key once and stores it locally (`api_key.txt`)
-- 🤖 **AI-Ready Format** - Exports massive JSON datasets perfect for LLM (ChatGPT/Claude) analysis
-- 📦 **Complete Data Dump** - Fetches Profiles, Inventories, Bazaar Prices, Auctions, and Bingo data
-- ⚡ **Smart Caching** - Respects rate limits while fetching data fast
-
-## 🎮 What Data You'll Get
-
-Unlike website scrapers, this tool pulls **raw data** directly from Hypixel servers:
-
-### 📁 Primary Data
 - **`complete_profile.json`**: The holy grail. Contains **everything** nested inside:
   - 🎒 **Inventories**: Main, Armor, Ender Chest, Sacks, Vault, Wardrobe, Fishing Bag, Potion Bag
   - ⚔️ **Progression**: Skills, Slayers, Dungeons, Collections, Crimson Isle, Rift
   - 🐾 **Content**: Pets, Minions, Accessories, Museum, Garden
 
-### 🌍 World Data (Context for AI)
-- **`bazaar_prices.json`**: Current market prices for all items (crucial for networth calculation)
-- **`active_auctions.json`**: Real-time auction house data for your profile
-- **`player_data.json`**: Global account stats (Karma, Network Level, Ranks)
-- **`skyblock_news.json`**: Latest patch notes and updates
-
-## 🚀 Quick Start
+## Quick Start
 
 ### 📋 Prerequisites
 
@@ -100,67 +83,23 @@ SkyBlock_Sahaj33_Tomato_20251216/
 
 ```
 
-## 🤖 AI Analysis Examples
+## AI Analysis Examples
 
 Since you are providing raw API data, you can ask powerful questions to ChatGPT or Claude. **Upload `complete_profile.json` and `bazaar_prices.json`** and ask:
 
-### 💰 Networth & Economy
+### Networth & Economy
 
 > "Using the `bazaar_prices.json` as a reference, calculate the approximate liquid value of the contents in my `inv_contents` and `ender_chest_contents` found in `complete_profile.json`."
 
-### ⚔️ Gear Optimization
+### Gear Optimization
 
 > "Analyze my `inv_armor` and `equipment_contents` in `complete_profile.json`. Based on my Dungeon classes (catacombs data), what accessories or upgrades am I missing?"
 
-### 📈 Skill Grinding
+### Skill Grinding
 
 > "Look at my mining data in `complete_profile.json`. Which HotM (Heart of the Mountain) perks should I prioritize to improve my gemstone rates?"
 
-## 🛠️ Troubleshooting
-
-### Common Issues
-
-**❌ "403 Forbidden" Error**
-- ✅ **Solution**: Enable API access in SkyBlock settings and wait 10 minutes
-
-**❌ "Profile not found"**  
-- ✅ **Solution**: Check username spelling and ensure you have SkyBlock profiles
-
-**❌ "Connection timeout"**
-- ✅ **Solution**: Check internet connection and try again
-
-**❌ Script won't run**
-- ✅ **Solution**: Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` in PowerShell
-
-### Need Help?
-
-- 🐛 [Report Issues](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/issues)
-- 💬 [Join Discussions](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/discussions)
-- 📖 [Check Wiki](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/wiki)
-
-## 🤝 Contributing
-
-We welcome contributions!
-
-* 🐛 Report bugs
-* 💡 Suggest features
-* 🔧 Submit Pull Requests
-
-**Note for Contributors**: Please add `api_key.txt` to your `.gitignore` to prevent leaking your credentials.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE]() file for details.
-
-## ⭐ Support the Project
-
-If this tool helped you, please:
-- ⭐ Star this repository
-- 🐦 Share it with friends
-- 🐛 Report any issues
-- 💡 Suggest improvements
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - 🎮 **Hypixel Network** - For creating SkyBlock
 - 🔗 **SkyCrypt Team** - For providing the excellent API
@@ -172,7 +111,5 @@ If this tool helped you, please:
 <div align="center">
 
 **Made with ❤️ for the SkyBlock community**
-
-[⭐ Star](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor) • [🐛 Report Bug](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/issues) • [💡 Request Feature](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/issues)
 
 </div>
