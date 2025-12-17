@@ -41,12 +41,10 @@ param(
     [switch]$Silent
 )
 
-# Enable TLS 1.2
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-# ============================================================================
+
 # CONFIGURATION
-# ============================================================================
 
 $Script:Version = "2.0"
 $Script:HypixelApiKey = $null
@@ -65,9 +63,9 @@ $Colors = @{
     Accent  = "Magenta"
 }
 
-# ============================================================================
+
 # UTILITY FUNCTIONS
-# ============================================================================
+
 
 function Write-Header {
     param([string]$Title)
@@ -119,9 +117,9 @@ function Get-UserInput {
     return $input
 }
 
-# ============================================================================
+
 # API CALL FUNCTIONS
-# ============================================================================
+
 
 function Invoke-HypixelApiCall {
     param(
@@ -181,9 +179,9 @@ function Invoke-MojangApiCall {
     }
 }
 
-# ============================================================================
+
 # PLAYER LOOKUP FUNCTIONS
-# ============================================================================
+
 
 function Get-PlayerUUID {
     param([string]$Username)
@@ -277,9 +275,9 @@ function Get-PlayerProfiles {
     }
 }
 
-# ============================================================================
+
 # PROFILE SELECTION
-# ============================================================================
+
 
 function Select-Profile {
     param(
@@ -335,9 +333,9 @@ function Select-Profile {
     }
 }
 
-# ============================================================================
+
 # DATA EXTRACTION
-# ============================================================================
+
 
 function New-OutputDirectory {
     param(
@@ -490,9 +488,9 @@ Extraction Tool: SkyBlock Profile Extractor
     }
 }
 
-# ============================================================================
+
 # SUMMARY AND COMPLETION
-# ============================================================================
+
 
 function Show-Summary {
     param(
@@ -582,9 +580,9 @@ function Test-Prerequisites {
     return $true
 }
 
-# ============================================================================
+
 # MAIN EXECUTION
-# ============================================================================
+
 
 try {
     Clear-Host
