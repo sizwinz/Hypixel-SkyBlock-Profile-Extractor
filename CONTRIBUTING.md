@@ -5,7 +5,7 @@ Thank you for contributing! We aim to build a reliable, AI-ready data extraction
 ## Ways to Contribute
 
 ### Bug Reports
-- Use [GitHub Issues](https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/issues).
+- Use [GitHub Issues](https://github.com/sizwinz/SkyBlock-Profile-Extractor/issues).
 - **Security:** Never include your `api_key.txt` or actual API key.
 - Include OS, Python/PowerShell version, and error logs.
 

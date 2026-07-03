@@ -3,8 +3,8 @@
   <h1>SkyBlock Profile Extractor</h1>
   <p><strong>Effortlessly extract comprehensive Hypixel SkyBlock profile data via the Official API.</strong></p>
 
-  <a href="https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/stargazers"><img src="https://img.shields.io/github/stars/Sahaj33-op/SkyBlock-Profile-Extractor?style=for-the-badge&logo=github&color=gold" alt="Stars"></a>
-  <a href="https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Sahaj33-op/SkyBlock-Profile-Extractor?style=for-the-badge&color=blue" alt="License"></a>
+  <a href="https://github.com/sizwinz/SkyBlock-Profile-Extractor/stargazers"><img src="https://img.shields.io/github/stars/sizwinz/SkyBlock-Profile-Extractor?style=for-the-badge&logo=github&color=gold" alt="Stars"></a>
+  <a href="https://github.com/sizwinz/SkyBlock-Profile-Extractor/blob/main/LICENSE"><img src="https://img.shields.io/github/license/sizwinz/SkyBlock-Profile-Extractor?style=for-the-badge&color=blue" alt="License"></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"></a>
   <a href="https://streamlit.io/"><img src="https://img.shields.io/badge/Streamlit-GUI-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit"></a>
 </div>
@@ -51,7 +51,7 @@ Built with reliability in mind, it interfaces directly with the **Official Hypix
 
 ```bash
 # Clone the repository
-git clone https://github.com/Sahaj33-op/SkyBlock-Profile-Extractor.git
+git clone https://github.com/sizwinz/SkyBlock-Profile-Extractor.git
 cd SkyBlock-Profile-Extractor
 
 # Install dependencies
@@ -114,5 +114,5 @@ This project is licensed under the **MIT License**. See the [`LICENSE`](LICENSE)
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/Sahaj33-op">Sahaj33-op</a>. Not affiliated with Hypixel Inc.</sub>
+  <sub>Built with ❤️ by <a href="https://github.com/sizwinz">sizwinz</a>. Not affiliated with Hypixel Inc.</sub>
 </div>
