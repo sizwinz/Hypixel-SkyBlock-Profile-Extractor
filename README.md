@@ -3,8 +3,8 @@
   <h1>SkyBlock Profile Extractor</h1>
   <p><strong>Effortlessly extract comprehensive Hypixel SkyBlock profile data via the Official API.</strong></p>
 
-  <a href="https://github.com/sizwinz/SkyBlock-Profile-Extractor/stargazers"><img src="https://img.shields.io/github/stars/sizwinz/SkyBlock-Profile-Extractor?style=for-the-badge&logo=github&color=gold" alt="Stars"></a>
-  <a href="https://github.com/sizwinz/SkyBlock-Profile-Extractor/blob/main/LICENSE"><img src="https://img.shields.io/github/license/sizwinz/SkyBlock-Profile-Extractor?style=for-the-badge&color=blue" alt="License"></a>
+  <a href="https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor/stargazers"><img src="https://img.shields.io/github/stars/sizwinz/Hypixel-SkyBlock-Profile-Extractor?style=for-the-badge&logo=github&color=gold" alt="Stars"></a>
+  <a href="https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor/blob/main/LICENSE"><img src="https://img.shields.io/github/license/sizwinz/Hypixel-SkyBlock-Profile-Extractor?style=for-the-badge&color=blue" alt="License"></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"></a>
   <a href="https://streamlit.io/"><img src="https://img.shields.io/badge/Streamlit-GUI-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit"></a>
 </div>
