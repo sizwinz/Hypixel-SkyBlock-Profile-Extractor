@@ -281,7 +281,9 @@ function Start-DataExtraction {
         @{ Ep = "skyblock/bazaar"; File = "bazaar_prices.json"; Desc = "Bazaar Prices" },
         @{ Ep = "skyblock/auction?profile=$($ProfileData.profile_id)"; File = "active_auctions.json"; Desc = "Active Auctions" },
         @{ Ep = "skyblock/news"; File = "skyblock_news.json"; Desc = "SkyBlock News" },
-        @{ Ep = "resources/skyblock/items"; File = "skyblock_items.json"; Desc = "Items Schema"; NoAuth = $true }
+        @{ Ep = "resources/skyblock/items"; File = "skyblock_items.json"; Desc = "Items Schema"; NoAuth = $true },
+        @{ Ep = "resources/skyblock/skills"; File = "skyblock_skills_resource.json"; Desc = "Skills Resource Schema"; NoAuth = $true },
+        @{ Ep = "resources/skyblock/collections"; File = "skyblock_collections_resource.json"; Desc = "Collections Resource Schema"; NoAuth = $true }
     )
     
     foreach ($item in $endpoints) {

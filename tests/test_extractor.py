@@ -159,4 +159,48 @@ def test_extractor_profile_fallback_reports_provenance_and_fallback_status():
     assert outcome["success_count"] == 0
 
 
+@responses.activate
+def test_extractor_unauthenticated_public_resource_endpoints():
+    from skyblock_extractor.extractor import ProfileExtractor
+    from skyblock_extractor.api_client import HypixelAPIClient
+
+    # Completely unauthenticated client (no API key)
+    client = HypixelAPIClient(api_key=None)
+
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/resources/skyblock/items",
+        json={"success": True, "items": [{"id": "ITEM_1"}]},
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/resources/skyblock/skills",
+        json={"success": True, "skills": {"COMBAT": {"maxLevel": 60}}},
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/resources/skyblock/collections",
+        json={"success": True, "collections": {"FARMING": {}}},
+        status=200,
+    )
+
+    extractor = ProfileExtractor(client=client)
+    results = extractor.extract(
+        player_uuid="b876ec32-e396-476b-a115-8438d83c67d4",
+        profile={"profile_id": "test-p1"},
+        categories=["items", "skills_resource", "collections_resource"],
+    )
+
+    assert results["items"].status == "success"
+    assert results["skills_resource"].status == "success"
+    assert results["collections_resource"].status == "success"
+
+    # All calls must be keyless
+    for call in responses.calls:
+        assert "API-Key" not in call.request.headers
+
+
+
 
