@@ -21,6 +21,8 @@ from skyblock_extractor.api_client import (
     ProfileNotFoundError,
     RateLimitExceededError,
     SkyBlockExtractorError,
+    can_persist_key_to_disk,
+    is_hosted_environment,
 )
 from skyblock_extractor.profile_service import normalize_profiles
 from skyblock_extractor.extractor import (
@@ -145,10 +147,13 @@ with st.sidebar:
     st.title("Configuration")
     
     # Resolve initial default key without exposing server environment key
+    hosted_mode = is_hosted_environment()
+    allow_storage = can_persist_key_to_disk()
     env_key = os.environ.get("HYPIXEL_API_KEY", "").strip()
     key_file = Path("api_key.txt")
     file_key = ""
-    if key_file.exists():
+    # Only load api_key.txt in local desktop mode to prevent sharing keys across sessions on a server
+    if allow_storage and key_file.exists():
         try:
             file_key = key_file.read_text(encoding="utf-8").strip()
         except Exception:
@@ -167,21 +172,24 @@ with st.sidebar:
             st.caption("Custom personal key active (overriding server key).")
         else:
             st.caption("Server environment API key active.")
+    elif hosted_mode:
+        st.caption("Multi-user mode: Keys remain isolated in browser session memory and are never saved to server disk.")
 
     effective_key = api_key_input.strip() or env_key
     
-    save_key = st.checkbox("Persist key locally to api_key.txt", value=bool(file_key))
-    if save_key and api_key_input.strip() and api_key_input.strip() != file_key:
-        try:
-            key_file.write_text(api_key_input.strip(), encoding="utf-8")
-            st.toast("API key saved locally.")
-        except Exception as e:
-            st.error(f"Failed to persist key: {e}")
-    elif not save_key and key_file.exists():
-        try:
-            key_file.unlink()
-        except Exception:
-            pass
+    if allow_storage:
+        save_key = st.checkbox("Persist key locally to api_key.txt", value=bool(file_key))
+        if save_key and api_key_input.strip() and api_key_input.strip() != file_key:
+            try:
+                key_file.write_text(api_key_input.strip(), encoding="utf-8")
+                st.toast("API key saved locally.")
+            except Exception as e:
+                st.error(f"Failed to persist key: {e}")
+        elif not save_key and key_file.exists():
+            try:
+                key_file.unlink()
+            except Exception:
+                pass
 
     st.markdown("---")
     with st.expander("API Security & Policy", expanded=False):

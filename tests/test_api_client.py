@@ -185,6 +185,29 @@ def test_fetch_endpoint_in_memory_ttl_cache():
     assert len(responses.calls) == 1
 
 
+def test_hosted_mode_disables_shared_file_storage(monkeypatch):
+    from skyblock_extractor.api_client import is_hosted_environment, can_persist_key_to_disk
+
+    # Desktop local context (no server flags)
+    monkeypatch.delenv("HYPIXEL_API_KEY", raising=False)
+    monkeypatch.delenv("STREAMLIT_HOSTED", raising=False)
+    monkeypatch.delenv("MULTI_USER", raising=False)
+    assert is_hosted_environment() is False
+    assert can_persist_key_to_disk() is True
+
+    # Hosted context with server HYPIXEL_API_KEY
+    monkeypatch.setenv("HYPIXEL_API_KEY", "server-secret-key")
+    assert is_hosted_environment() is True
+    assert can_persist_key_to_disk() is False
+
+    # Multi-user hosted flag
+    monkeypatch.delenv("HYPIXEL_API_KEY", raising=False)
+    monkeypatch.setenv("MULTI_USER", "true")
+    assert is_hosted_environment() is True
+    assert can_persist_key_to_disk() is False
+
+
+
 
 
 @responses.activate
