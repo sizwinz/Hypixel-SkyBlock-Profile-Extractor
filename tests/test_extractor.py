@@ -202,5 +202,43 @@ def test_extractor_unauthenticated_public_resource_endpoints():
         assert "API-Key" not in call.request.headers
 
 
+@responses.activate
+def test_extractor_extract_public_resources_independent_of_player():
+    from skyblock_extractor.extractor import ProfileExtractor
+    from skyblock_extractor.api_client import HypixelAPIClient
+
+    client = HypixelAPIClient(api_key=None)
+
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/resources/skyblock/items",
+        json={"success": True, "items": [{"id": "HYPERION"}]},
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/resources/skyblock/skills",
+        json={"success": True, "skills": {"MINING": {"maxLevel": 60}}},
+        status=200,
+    )
+
+    extractor = ProfileExtractor(client=client)
+    # Genuinely independent call without player_uuid or profile
+    results = extractor.extract_public_resources(categories=["items", "skills_resource"])
+
+    assert "items" in results
+    assert results["items"].status == "success"
+    assert results["items"].filename == "skyblock_items.json"
+    assert results["items"].data == {"success": True, "items": [{"id": "HYPERION"}]}
+
+    assert "skills_resource" in results
+    assert results["skills_resource"].status == "success"
+    assert results["skills_resource"].filename == "skyblock_skills_resource.json"
+
+    for call in responses.calls:
+        assert "API-Key" not in call.request.headers
+
+
+
 
 
