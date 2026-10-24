@@ -164,6 +164,39 @@ def test_fetch_endpoint_429_retry_recovery(monkeypatch):
 
 
 @responses.activate
+def test_fetch_endpoint_429_exponential_backoff_progression(monkeypatch):
+    client = HypixelAPIClient(api_key="valid-key-12345678-1234-1234-1234", max_retries=3, max_retry_delay=15.0)
+    sleep_calls = []
+    monkeypatch.setattr("time.sleep", lambda s: sleep_calls.append(s))
+
+    # 3 successive 429 responses
+    for _ in range(3):
+        responses.add(
+            responses.GET,
+            "https://api.hypixel.net/v2/skyblock/garden",
+            headers={"RateLimit-Reset": "1"},
+            status=429,
+        )
+    # Fourth call succeeds
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/garden",
+        json={"success": True, "garden": {"level": 10}},
+        status=200,
+    )
+
+    data = client.fetch_endpoint("skyblock/garden")
+    assert data["success"] is True
+    assert len(responses.calls) == 4
+    assert len(sleep_calls) == 3
+
+    # Backoff must scale exponentially across attempts
+    assert sleep_calls[1] > sleep_calls[0] * 1.5
+    assert sleep_calls[2] > sleep_calls[1] * 1.5
+
+
+
+@responses.activate
 def test_fetch_endpoint_in_memory_ttl_cache():
     client = HypixelAPIClient(api_key="valid-key-12345678-1234-1234-1234")
 

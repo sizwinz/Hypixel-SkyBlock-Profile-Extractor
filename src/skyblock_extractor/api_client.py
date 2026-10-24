@@ -172,9 +172,12 @@ class HypixelAPIClient:
                     except (ValueError, TypeError):
                         reset_sec = 1.0
 
-                    if attempt < self.max_retries and reset_sec <= self.max_retry_delay:
+                    base = max(reset_sec, 0.5)
+                    backoff = base * (2 ** attempt)
+
+                    if attempt < self.max_retries and backoff <= self.max_retry_delay:
                         attempt += 1
-                        sleep_sec = max(reset_sec, 0.1) + random.uniform(0.05, 0.2)
+                        sleep_sec = backoff + random.uniform(0.05, 0.2)
                         time.sleep(sleep_sec)
                         continue
 
