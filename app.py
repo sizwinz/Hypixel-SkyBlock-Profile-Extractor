@@ -424,19 +424,21 @@ if st.session_state.extraction_results:
             """, unsafe_allow_html=True)
         with m2:
             dungeons = summary.get("dungeons", {})
+            cata_val = dungeons.get('catacombs_level') if (dungeons.get('available') and dungeons.get('catacombs_level') is not None) else 'N/A'
             st.markdown(f"""
             <div class="metric-card">
                 <div class="metric-label">Catacombs Level</div>
-                <div class="metric-val">{dungeons.get('catacombs_level', 0)}</div>
+                <div class="metric-val">{cata_val}</div>
             </div>
             """, unsafe_allow_html=True)
         with m3:
             slayers = summary.get("slayer", {})
-            zombie_lvl = slayers.get("zombie", {}).get("level", 0)
+            zombie_lvl = slayers.get("zombie", {}).get("level") if slayers.get("available") else None
+            zombie_val = f"Lvl {zombie_lvl}" if zombie_lvl is not None else 'N/A'
             st.markdown(f"""
             <div class="metric-card">
                 <div class="metric-label">Zombie Slayer</div>
-                <div class="metric-val">Lvl {zombie_lvl}</div>
+                <div class="metric-val">{zombie_val}</div>
             </div>
             """, unsafe_allow_html=True)
         with m4:

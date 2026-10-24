@@ -99,45 +99,77 @@ class ProfileAnalyzer:
         skill_average = round(total_level / tracked_count, 2) if tracked_count > 0 else None
 
         # 3. Slayers
-        slayer_data = member.get("slayer", {}).get("slayer_bosses", {})
-        slayer_summary: Dict[str, Dict[str, Any]] = {}
-        for boss, val in slayer_data.items():
-            if isinstance(val, dict):
-                xp = val.get("xp", 0)
-                slayer_summary[boss] = {
-                    "xp": xp,
-                    "level": calculate_level(float(xp), SLAYER_XP_THRESHOLDS),
-                }
+        slayer_obj = member.get("slayer")
+        slayer_summary: Dict[str, Any] = {"available": False, "bosses": {}}
+        if isinstance(slayer_obj, dict) and "slayer_bosses" in slayer_obj:
+            slayer_data = slayer_obj.get("slayer_bosses", {})
+            if isinstance(slayer_data, dict) and slayer_data:
+                slayer_summary["available"] = True
+                for boss, val in slayer_data.items():
+                    if isinstance(val, dict):
+                        xp = val.get("xp", 0)
+                        entry = {
+                            "xp": xp,
+                            "level": calculate_level(float(xp), SLAYER_XP_THRESHOLDS),
+                        }
+                        slayer_summary["bosses"][boss] = entry
+                        slayer_summary[boss] = entry
 
         # 4. Dungeons / Catacombs
-        dungeons_obj = member.get("dungeons", {})
-        cata_xp = dungeons_obj.get("dungeon_types", {}).get("catacombs", {}).get("experience", 0)
-        selected_class = dungeons_obj.get("selected_dungeon_class", "none")
-        cata_level = calculate_level(float(cata_xp), CATACOMBS_XP_THRESHOLDS)
-
-        dungeons_summary = {
-            "catacombs_xp": float(cata_xp),
-            "catacombs_level": cata_level,
-            "class": selected_class,
-        }
+        dungeons_obj = member.get("dungeons")
+        dungeons_available = isinstance(dungeons_obj, dict) and bool(dungeons_obj.get("dungeon_types"))
+        if dungeons_available and isinstance(dungeons_obj, dict):
+            cata_xp = dungeons_obj.get("dungeon_types", {}).get("catacombs", {}).get("experience", 0)
+            selected_class = dungeons_obj.get("selected_dungeon_class", "none")
+            cata_level = calculate_level(float(cata_xp), CATACOMBS_XP_THRESHOLDS)
+            dungeons_summary = {
+                "available": True,
+                "catacombs_xp": float(cata_xp),
+                "catacombs_level": cata_level,
+                "class": selected_class,
+            }
+        else:
+            dungeons_summary = {
+                "available": False,
+                "catacombs_xp": None,
+                "catacombs_level": None,
+                "class": "none",
+            }
 
         # 5. Mining & Heart of the Mountain
-        mining_core = member.get("mining_core", {})
-        hotm_tokens = mining_core.get("tokens", 0)
-        mithril_powder = mining_core.get("powder_mithril", 0)
-        gemstone_powder = mining_core.get("powder_gemstone", 0)
-        mining_summary = {
-            "tokens": hotm_tokens,
-            "mithril_powder": mithril_powder,
-            "gemstone_powder": gemstone_powder,
-        }
+        mining_core = member.get("mining_core")
+        mining_available = isinstance(mining_core, dict) and bool(mining_core)
+        if mining_available and isinstance(mining_core, dict):
+            mining_summary = {
+                "available": True,
+                "tokens": mining_core.get("tokens", 0),
+                "mithril_powder": mining_core.get("powder_mithril", 0),
+                "gemstone_powder": mining_core.get("powder_gemstone", 0),
+            }
+        else:
+            mining_summary = {
+                "available": False,
+                "tokens": None,
+                "mithril_powder": None,
+                "gemstone_powder": None,
+            }
 
         # 6. Garden & Farming
-        garden_raw = aux.get("garden", {}).get("garden", {})
-        garden_summary = {
-            "level": garden_raw.get("level", 0),
-            "completed_visitors": garden_raw.get("completed_visitors", 0),
-        }
+        garden_container = aux.get("garden")
+        garden_available = isinstance(garden_container, dict) and "garden" in garden_container
+        if garden_available and isinstance(garden_container, dict):
+            garden_raw = garden_container.get("garden", {})
+            garden_summary = {
+                "available": True,
+                "level": garden_raw.get("level", 0),
+                "completed_visitors": garden_raw.get("completed_visitors", 0),
+            }
+        else:
+            garden_summary = {
+                "available": False,
+                "level": None,
+                "completed_visitors": None,
+            }
 
         # 7. Privacy & Missing APIs
         skills_disabled = bool(member) and not has_any_skills
@@ -153,11 +185,14 @@ class ProfileAnalyzer:
             priorities.append("Skill Average Foundation: Raise non-combat skills (Farming, Mining, Enchanting) to reach Skill Average 25.")
         elif skill_average is None and skills_disabled:
             priorities.append("API Privacy: Enable Skills and Inventory API in Hypixel SkyBlock settings to view skill progression.")
-        if cata_level < 14:
+        if dungeons_summary["available"] and dungeons_summary["catacombs_level"] is not None and dungeons_summary["catacombs_level"] < 14:
             priorities.append("Catacombs Entry: Progress through Catacombs Floors 1-5 to unlock essential mid-game dungeon gear.")
-        if slayer_summary.get("wolf", {}).get("level", 0) < 6:
+
+        wolf_boss = slayer_summary.get("wolf") or slayer_summary.get("bosses", {}).get("wolf")
+        if slayer_summary["available"] and wolf_boss and wolf_boss.get("level", 0) < 6:
             priorities.append("Slayer Utility: Advance Wolf Slayer to Level 6 to unlock the Mana Flux Power Orb.")
-        if garden_summary["level"] < 5:
+
+        if garden_summary["available"] and garden_summary["level"] is not None and garden_summary["level"] < 5:
             priorities.append("Garden Initialization: Unlock initial Garden plots and serve visitors to boost farming fortune.")
         if not priorities:
             priorities.append("Endgame Progression: Focus on Master Catacombs floors, Heart of the Mountain 7/10 tree completion, and high-tier Slayer bosses.")

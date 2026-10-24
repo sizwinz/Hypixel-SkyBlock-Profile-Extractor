@@ -110,3 +110,49 @@ def test_profile_analyzer_missing_data_and_privacy():
     assert summary_disabled["skill_average"] is None
     assert summary_disabled["api_privacy"]["skills_api_disabled"] is True
 
+
+def test_profile_analyzer_unavailable_dungeons_slayer_garden_no_spurious_recommendations():
+    player_uuid = "b876ec32-e396-476b-a115-8438d83c67d4"
+    analyzer = ProfileAnalyzer()
+
+    # Profile with high skills but completely missing dungeons, slayer, and garden data
+    profile_no_aux = {
+        "cute_name": "Mango",
+        "members": {
+            "b876ec32e396476ba1158438d83c67d4": {
+                "player_data": {
+                    "experience": {
+                        "SKILL_COMBAT": 50000000,
+                        "SKILL_MINING": 50000000,
+                        "SKILL_FARMING": 50000000,
+                        "SKILL_FORAGING": 50000000,
+                        "SKILL_FISHING": 50000000,
+                        "SKILL_ENCHANTING": 50000000,
+                        "SKILL_ALCHEMY": 50000000,
+                        "SKILL_TAMING": 50000000,
+                    }
+                }
+            }
+        }
+    }
+
+    summary = analyzer.analyze(player_uuid=player_uuid, profile_data=profile_no_aux, auxiliary_data={})
+
+    # Dungeons should be marked unavailable with None level
+    assert summary["dungeons"]["available"] is False
+    assert summary["dungeons"]["catacombs_level"] is None
+
+    # Slayer should be marked unavailable
+    assert summary["slayer"]["available"] is False
+
+    # Garden should be marked unavailable with None level
+    assert summary["garden"]["available"] is False
+    assert summary["garden"]["level"] is None
+
+    # Recommendations should NOT include spurious beginner tasks for missing datasets
+    priorities_text = " ".join(summary["progression_priorities"])
+    assert "Catacombs Entry" not in priorities_text
+    assert "Slayer Utility" not in priorities_text
+    assert "Garden Initialization" not in priorities_text
+
+
