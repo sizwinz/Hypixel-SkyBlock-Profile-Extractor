@@ -23,7 +23,11 @@ from skyblock_extractor.api_client import (
     SkyBlockExtractorError,
 )
 from skyblock_extractor.profile_service import normalize_profiles
-from skyblock_extractor.extractor import ProfileExtractor, ExtractionResult
+from skyblock_extractor.extractor import (
+    ProfileExtractor,
+    ExtractionResult,
+    classify_extraction_outcome,
+)
 from skyblock_extractor.analysis import ProfileAnalyzer
 from skyblock_extractor.exporter import ProfileExporter
 
@@ -140,8 +144,8 @@ if "zip_filename" not in st.session_state:
 with st.sidebar:
     st.title("Configuration")
     
-    # Resolve initial default key
-    env_key = os.environ.get("HYPIXEL_API_KEY", "")
+    # Resolve initial default key without exposing server environment key
+    env_key = os.environ.get("HYPIXEL_API_KEY", "").strip()
     key_file = Path("api_key.txt")
     file_key = ""
     if key_file.exists():
@@ -150,20 +154,27 @@ with st.sidebar:
         except Exception:
             pass
 
-    default_key = env_key or file_key
-    
+    # Do not prefill user input widget with server environment secret
     api_key_input = st.text_input(
         "Hypixel API Key",
-        value=default_key,
+        value=file_key,
         type="password",
-        help="Personal or Development API Key from developer.hypixel.net",
+        help="Personal API Key from developer.hypixel.net. If hosted, server environment key is used when blank.",
     )
+
+    if env_key:
+        if api_key_input.strip():
+            st.caption("Custom personal key active (overriding server key).")
+        else:
+            st.caption("Server environment API key active.")
+
+    effective_key = api_key_input.strip() or env_key
     
     save_key = st.checkbox("Persist key locally to api_key.txt", value=bool(file_key))
-    if save_key and api_key_input and api_key_input != file_key:
+    if save_key and api_key_input.strip() and api_key_input.strip() != file_key:
         try:
             key_file.write_text(api_key_input.strip(), encoding="utf-8")
-            st.toast("API key saved locally.", icon="💾")
+            st.toast("API key saved locally.")
         except Exception as e:
             st.error(f"Failed to persist key: {e}")
     elif not save_key and key_file.exists():
@@ -213,11 +224,11 @@ if input_username != st.session_state.last_queried_username:
 if find_btn:
     if not input_username.strip():
         st.warning("Please enter a Minecraft username.")
-    elif not api_key_input.strip():
+    elif not effective_key:
         st.warning("Please provide a Hypixel API key in the sidebar.")
     else:
         st.session_state.last_queried_username = input_username.strip()
-        client = HypixelAPIClient(api_key=api_key_input.strip())
+        client = HypixelAPIClient(api_key=effective_key)
         
         with st.spinner("Resolving player and fetching profiles..."):
             try:
@@ -301,7 +312,7 @@ if st.session_state.profiles:
     # STEP 4: EXTRACTION TRIGGER
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("Start Extraction", type="primary", use_container_width=True):
-        client = HypixelAPIClient(api_key=api_key_input.strip())
+        client = HypixelAPIClient(api_key=effective_key)
         progress_bar = st.progress(0, text="Initializing extraction pipeline...")
         status_text = st.empty()
 
@@ -318,130 +329,158 @@ if st.session_state.profiles:
                 categories=selected_categories,
             )
 
-            # Prioritize freshly extracted profile data if available
-            fresh_profile_data = None
-            if "profile" in results and results["profile"].status == "success" and results["profile"].data:
-                fresh_profile_data = results["profile"].data
-
-            profile_payload_for_analysis = fresh_profile_data or target_profile.get("data", target_profile)
-
-            # Analyze progression
-            analyzer = ProfileAnalyzer()
-            auxiliary = {cat: res.data for cat, res in results.items() if res.status == "success" and res.data}
-            summary = analyzer.analyze(
-                player_uuid=st.session_state.player_uuid,
-                profile_data=profile_payload_for_analysis,
-                auxiliary_data=auxiliary,
-            )
-
-            # Build in-memory bundle
-            exporter = ProfileExporter(
-                username=st.session_state.player_username,
-                player_uuid=st.session_state.player_uuid,
-                profile_name=target_profile["name"],
-                profile_id=target_profile["profile_id"],
-                results=results,
-                summary=summary,
-            )
-
-            zip_buffer = exporter.build_zip_in_memory()
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            zip_name = f"SkyBlock_{st.session_state.player_username}_{target_profile['name']}_{ts}.zip"
-
+            outcome = classify_extraction_outcome(results)
             st.session_state.extraction_results = results
-            st.session_state.summary = summary
-            st.session_state.zip_buffer = zip_buffer
-            st.session_state.zip_filename = zip_name
+            st.session_state.extraction_outcome = outcome
 
-            progress_bar.progress(100, text="Extraction completed successfully.")
-            st.toast("Data extracted and ready for download.", icon="✅")
+            if outcome["status"] == "complete_failure":
+                st.session_state.summary = None
+                st.session_state.zip_buffer = None
+                st.session_state.zip_filename = None
+                progress_bar.progress(100, text="Extraction failed for all requested endpoints.")
+                st.error("Extraction failed: None of the requested endpoints succeeded. Please verify API credentials and player privacy settings.")
+            else:
+                # Prioritize freshly extracted profile data if available
+                fresh_profile_data = None
+                if "profile" in results and results["profile"].status == "success" and results["profile"].data:
+                    fresh_profile_data = results["profile"].data
+
+                profile_payload_for_analysis = fresh_profile_data or target_profile.get("data", target_profile)
+
+                # Analyze progression
+                analyzer = ProfileAnalyzer()
+                auxiliary = {cat: res.data for cat, res in results.items() if res.status == "success" and res.data}
+                summary = analyzer.analyze(
+                    player_uuid=st.session_state.player_uuid,
+                    profile_data=profile_payload_for_analysis,
+                    auxiliary_data=auxiliary,
+                )
+
+                # Build in-memory bundle
+                exporter = ProfileExporter(
+                    username=st.session_state.player_username,
+                    player_uuid=st.session_state.player_uuid,
+                    profile_name=target_profile["name"],
+                    profile_id=target_profile["profile_id"],
+                    results=results,
+                    summary=summary,
+                )
+
+                zip_buffer = exporter.build_zip_in_memory()
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                zip_name = f"SkyBlock_{st.session_state.player_username}_{target_profile['name']}_{ts}.zip"
+
+                st.session_state.summary = summary
+                st.session_state.zip_buffer = zip_buffer
+                st.session_state.zip_filename = zip_name
+
+                if outcome["status"] == "complete_success":
+                    progress_bar.progress(100, text=f"Extraction completed: All {outcome['total_count']} datasets acquired.")
+                    st.success(f"All {outcome['total_count']} datasets successfully extracted.")
+                else:
+                    progress_bar.progress(100, text=f"Partial extraction completed: {outcome['success_count']} of {outcome['total_count']} datasets acquired.")
+                    st.warning(f"Partial extraction: {outcome['success_count']} of {outcome['total_count']} datasets acquired. Some endpoints failed.")
 
 
 # STEP 5: RESULTS & DOWNLOADS
-if st.session_state.extraction_results and st.session_state.summary:
+if st.session_state.extraction_results:
     st.divider()
     st.subheader("Extraction Summary & Analytics")
 
-    summary = st.session_state.summary
     results = st.session_state.extraction_results
+    outcome = st.session_state.get("extraction_outcome", classify_extraction_outcome(results))
+    summary = st.session_state.summary
 
-    # Highlight metrics
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">Skill Average</div>
-            <div class="metric-val">{summary.get('skill_average', 'N/A')}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with m2:
-        dungeons = summary.get("dungeons", {})
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">Catacombs Level</div>
-            <div class="metric-val">{dungeons.get('catacombs_level', 0)}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with m3:
-        slayers = summary.get("slayer", {})
-        zombie_lvl = slayers.get("zombie", {}).get("level", 0)
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">Zombie Slayer</div>
-            <div class="metric-val">Lvl {zombie_lvl}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with m4:
-        ok_count = sum(1 for r in results.values() if r.status == "success")
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">Datasets Acquired</div>
-            <div class="metric-val">{ok_count}/{len(results)}</div>
-        </div>
-        """, unsafe_allow_html=True)
+    if outcome["status"] == "complete_failure":
+        st.error("No datasets could be extracted. Review endpoint diagnostics below.")
+        tab_endpoints, = st.tabs(["Endpoint Status & Diagnostics"])
+        with tab_endpoints:
+            status_rows = []
+            for cat, r in results.items():
+                status_rows.append({
+                    "Category": r.description,
+                    "Filename": r.filename,
+                    "Status": r.status.upper(),
+                    "Details": r.error_message or "Failed to extract",
+                })
+            st.table(status_rows)
+    elif summary:
+        # Highlight metrics
+        m1, m2, m3, m4 = st.columns(4)
+        with m1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">Skill Average</div>
+                <div class="metric-val">{summary.get('skill_average') or 'N/A'}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with m2:
+            dungeons = summary.get("dungeons", {})
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">Catacombs Level</div>
+                <div class="metric-val">{dungeons.get('catacombs_level', 0)}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with m3:
+            slayers = summary.get("slayer", {})
+            zombie_lvl = slayers.get("zombie", {}).get("level", 0)
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">Zombie Slayer</div>
+                <div class="metric-val">Lvl {zombie_lvl}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with m4:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">Datasets Acquired</div>
+                <div class="metric-val">{outcome['success_count']}/{outcome['total_count']}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-    # Downloads section
-    st.markdown("### Download Data Package")
-    st.download_button(
-        label=f"Download Archive ({st.session_state.zip_filename})",
-        data=st.session_state.zip_buffer.getvalue(),
-        file_name=st.session_state.zip_filename,
-        mime="application/zip",
-        type="primary",
-        use_container_width=True,
-    )
+        # Downloads section
+        if st.session_state.zip_buffer:
+            st.markdown("### Download Data Package")
+            st.download_button(
+                label=f"Download Archive ({st.session_state.zip_filename})",
+                data=st.session_state.zip_buffer.getvalue(),
+                file_name=st.session_state.zip_filename,
+                mime="application/zip",
+                type="primary",
+                use_container_width=True,
+            )
 
-    # Progression Priorities Tab
-    tab_priorities, tab_endpoints, tab_files = st.tabs([
-        "Progression Priorities", "Endpoint Status", "File Previews"
-    ])
+        # Progression Priorities Tab
+        tab_priorities, tab_endpoints, tab_files = st.tabs([
+            "Progression Priorities", "Endpoint Status", "File Previews"
+        ])
 
-    with tab_priorities:
-        st.markdown("**Rule-Based Next Steps:**")
-        priorities = summary.get("progression_priorities", [])
-        for item in priorities:
-            st.info(item)
+        with tab_priorities:
+            st.markdown("**Rule-Based Next Steps:**")
+            priorities = summary.get("progression_priorities", [])
+            for item in priorities:
+                st.info(item)
 
-        st.caption("Note: Recommendations are derived using deterministic game logic. Progression data depends on enabled in-game API settings.")
+            st.caption("Note: Recommendations are derived using deterministic game logic. Progression data depends on enabled in-game API settings.")
 
-    with tab_endpoints:
-        st.markdown("**Endpoint Extraction Status:**")
-        status_rows = []
-        for cat, r in results.items():
-            badge = '<span class="badge-ok">SUCCESS</span>' if r.status == "success" else '<span class="badge-fail">FAILED</span>'
-            status_rows.append({
-                "Category": r.description,
-                "Filename": r.filename,
-                "Status": r.status.upper(),
-                "Details": r.error_message or "Extracted cleanly",
-            })
-        st.table(status_rows)
+        with tab_endpoints:
+            st.markdown("**Endpoint Extraction Status:**")
+            status_rows = []
+            for cat, r in results.items():
+                status_rows.append({
+                    "Category": r.description,
+                    "Filename": r.filename,
+                    "Status": r.status.upper(),
+                    "Details": r.error_message or "Extracted cleanly",
+                })
+            st.table(status_rows)
 
-    with tab_files:
-        preview_category = st.selectbox(
-            "Select file to inspect:",
-            options=[k for k, v in results.items() if v.status == "success"],
-            format_func=lambda k: f"{results[k].filename} ({results[k].description})",
-        )
-        if preview_category:
-            st.json(results[preview_category].data, expanded=False)
+        with tab_files:
+            preview_category = st.selectbox(
+                "Select file to inspect:",
+                options=[k for k, v in results.items() if v.status == "success"],
+                format_func=lambda k: f"{results[k].filename} ({results[k].description})",
+            )
+            if preview_category and results[preview_category].data is not None:
+                st.json(results[preview_category].data, expanded=False)
