@@ -147,6 +147,8 @@ if "public_zip_buffer" not in st.session_state:
     st.session_state.public_zip_buffer = None
 if "public_zip_filename" not in st.session_state:
     st.session_state.public_zip_filename = None
+if "public_outcome" not in st.session_state:
+    st.session_state.public_outcome = None
 
 
 # --- SIDEBAR: AUTHENTICATION & CONFIG ---
@@ -577,50 +579,78 @@ with tab_public:
             pub_extractor = ProfileExtractor(client=pub_client, progress_callback=update_pub_progress)
             with st.spinner("Querying Hypixel public resource endpoints..."):
                 pub_results = pub_extractor.extract_public_resources(selected_pub_categories)
-                pub_exporter = PublicResourceExporter(results=pub_results)
-                pub_zip_buffer = pub_exporter.build_zip_in_memory()
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                pub_zip_name = f"SkyBlock_Public_Resources_{ts}.zip"
-
+                pub_outcome = classify_extraction_outcome(pub_results)
                 st.session_state.public_results = pub_results
-                st.session_state.public_zip_buffer = pub_zip_buffer
-                st.session_state.public_zip_filename = pub_zip_name
-                pub_progress.progress(100, text="Public resources extracted successfully.")
+                st.session_state.public_outcome = pub_outcome
+
+                if pub_outcome["status"] == "complete_failure":
+                    st.session_state.public_zip_buffer = None
+                    st.session_state.public_zip_filename = None
+                    pub_progress.progress(100, text="Public resource extraction failed for all requested endpoints.")
+                    st.error("Extraction failed: None of the requested public resource endpoints responded successfully. Please verify your network connection and Hypixel API status.")
+                else:
+                    pub_exporter = PublicResourceExporter(results=pub_results)
+                    pub_zip_buffer = pub_exporter.build_zip_in_memory()
+                    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    pub_zip_name = f"SkyBlock_Public_Resources_{ts}.zip"
+
+                    st.session_state.public_zip_buffer = pub_zip_buffer
+                    st.session_state.public_zip_filename = pub_zip_name
+
+                    if pub_outcome["status"] == "complete_success":
+                        pub_progress.progress(100, text=f"All {pub_outcome['total_count']} public resources extracted successfully.")
+                        st.success(f"All {pub_outcome['total_count']} public resource schemas successfully extracted.")
+                    else:
+                        pub_progress.progress(100, text=f"Partial extraction completed: {pub_outcome['success_count']} of {pub_outcome['total_count']} public resources acquired.")
+                        st.warning(f"Partial extraction: {pub_outcome['success_count']} of {pub_outcome['total_count']} public resources acquired. Some endpoints failed.")
 
     if st.session_state.public_results:
         st.divider()
         st.subheader("Extracted Public Resources")
 
         pub_res = st.session_state.public_results
-        successful_pub = sum(1 for r in pub_res.values() if r.status == "success")
+        pub_outcome = st.session_state.get("public_outcome", classify_extraction_outcome(pub_res))
 
-        st.download_button(
-            label=f"Download Public Resources Archive ({st.session_state.public_zip_filename})",
-            data=st.session_state.public_zip_buffer.getvalue(),
-            file_name=st.session_state.public_zip_filename,
-            mime="application/zip",
-            type="primary",
-            use_container_width=True,
-        )
-
-        tab_pub_status, tab_pub_preview = st.tabs(["Extraction Status", "Schema Inspector"])
-        with tab_pub_status:
+        if pub_outcome["status"] == "complete_failure":
+            st.error("No public resource datasets could be extracted. Review diagnostics below.")
             pub_rows = []
             for cat, r in pub_res.items():
                 pub_rows.append({
                     "Schema": r.description,
                     "Filename": r.filename,
                     "Status": r.status.upper(),
-                    "Details": r.error_message or "Extracted cleanly",
+                    "Details": r.error_message or "Failed to extract",
                 })
             st.table(pub_rows)
+        else:
+            if st.session_state.public_zip_buffer:
+                st.download_button(
+                    label=f"Download Public Resources Archive ({st.session_state.public_zip_filename})",
+                    data=st.session_state.public_zip_buffer.getvalue(),
+                    file_name=st.session_state.public_zip_filename,
+                    mime="application/zip",
+                    type="primary",
+                    use_container_width=True,
+                )
 
-        with tab_pub_preview:
-            preview_cat = st.selectbox(
-                "Select schema to preview:",
-                options=[k for k, v in pub_res.items() if v.status == "success"],
-                format_func=lambda k: f"{pub_res[k].filename} ({pub_res[k].description})",
-            )
+            tab_pub_status, tab_pub_preview = st.tabs(["Extraction Status", "Schema Inspector"])
+            with tab_pub_status:
+                pub_rows = []
+                for cat, r in pub_res.items():
+                    pub_rows.append({
+                        "Schema": r.description,
+                        "Filename": r.filename,
+                        "Status": r.status.upper(),
+                        "Details": r.error_message or "Extracted cleanly",
+                    })
+                st.table(pub_rows)
+
+            with tab_pub_preview:
+                preview_cat = st.selectbox(
+                    "Select schema to preview:",
+                    options=[k for k, v in pub_res.items() if v.status == "success"],
+                    format_func=lambda k: f"{pub_res[k].filename} ({pub_res[k].description})",
+                )
             if preview_cat and pub_res[preview_cat].data is not None:
                 st.json(pub_res[preview_cat].data, expanded=False)
 

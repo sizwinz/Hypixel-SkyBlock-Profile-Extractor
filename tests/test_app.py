@@ -77,9 +77,102 @@ def test_app_public_resources_extraction_trigger():
         assert pub_btn is not None
         pub_btn.click().run()
 
-        dl_labels = [b.label for b in app.download_button]
-        assert any("Download Public Resources Archive" in l for l in dl_labels)
+        import zipfile
+        zip_buffer = app.session_state.public_zip_buffer
+        assert zip_buffer is not None
+        with zipfile.ZipFile(zip_buffer) as archive:
+            namelist = archive.namelist()
+            assert "skyblock_items.json" in namelist
+            assert "skyblock_skills_resource.json" in namelist
+            assert "skyblock_collections_resource.json" in namelist
+            assert "extraction_manifest.json" in namelist
+
         assert not app.exception
+
+
+def test_app_public_resources_handles_total_failure():
+    import responses
+
+    with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+        rsps.add(
+            responses.GET,
+            "https://api.hypixel.net/v2/resources/skyblock/items",
+            status=500,
+        )
+        rsps.add(
+            responses.GET,
+            "https://api.hypixel.net/v2/resources/skyblock/skills",
+            status=500,
+        )
+        rsps.add(
+            responses.GET,
+            "https://api.hypixel.net/v2/resources/skyblock/collections",
+            status=500,
+        )
+
+        app = AppTest.from_file(APP_PATH, default_timeout=15)
+        app.run()
+
+        pub_btn = None
+        for b in app.button:
+            if b.label == "Extract Public Resources":
+                pub_btn = b
+                break
+
+        assert pub_btn is not None
+        pub_btn.click().run()
+
+        assert app.session_state.public_outcome["status"] == "complete_failure"
+        assert app.session_state.public_zip_buffer is None
+        assert not app.exception
+
+
+def test_app_public_resources_handles_partial_success():
+    import responses
+    import zipfile
+
+    with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+        rsps.add(
+            responses.GET,
+            "https://api.hypixel.net/v2/resources/skyblock/items",
+            json={"success": True, "items": [{"id": "ITEM_1"}]},
+            status=200,
+        )
+        rsps.add(
+            responses.GET,
+            "https://api.hypixel.net/v2/resources/skyblock/skills",
+            status=500,
+        )
+        rsps.add(
+            responses.GET,
+            "https://api.hypixel.net/v2/resources/skyblock/collections",
+            json={"success": True, "collections": {}},
+            status=200,
+        )
+
+        app = AppTest.from_file(APP_PATH, default_timeout=15)
+        app.run()
+
+        pub_btn = None
+        for b in app.button:
+            if b.label == "Extract Public Resources":
+                pub_btn = b
+                break
+
+        assert pub_btn is not None
+        pub_btn.click().run()
+
+        assert app.session_state.public_outcome["status"] == "partial_success"
+        zip_buf = app.session_state.public_zip_buffer
+        assert zip_buf is not None
+        with zipfile.ZipFile(zip_buf) as archive:
+            namelist = archive.namelist()
+            assert "skyblock_items.json" in namelist
+            assert "skyblock_collections_resource.json" in namelist
+            assert "skyblock_skills_resource.json" not in namelist
+        assert not app.exception
+
+
 
 
 
