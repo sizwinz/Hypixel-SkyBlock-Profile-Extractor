@@ -1,118 +1,272 @@
-<div align="center">
-  <img src="logo.png" alt="SkyBlock Profile Extractor Logo" width="180"/>
-  <h1>SkyBlock Profile Extractor</h1>
-  <p><strong>Effortlessly extract comprehensive Hypixel SkyBlock profile data via the Official API.</strong></p>
-
-  <a href="https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor/stargazers"><img src="https://img.shields.io/github/stars/sizwinz/Hypixel-SkyBlock-Profile-Extractor?style=for-the-badge&logo=github&color=gold" alt="Stars"></a>
-  <a href="https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor/blob/main/LICENSE"><img src="https://img.shields.io/github/license/sizwinz/Hypixel-SkyBlock-Profile-Extractor?style=for-the-badge&color=blue" alt="License"></a>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"></a>
-  <a href="https://streamlit.io/"><img src="https://img.shields.io/badge/Streamlit-GUI-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit"></a>
-</div>
-
----
-
-## ✨ Overview
-
-**SkyBlock Profile Extractor** is a powerful, user-friendly tool designed to fetch and organize raw, comprehensive data from your Hypixel SkyBlock profiles. Whether you're a dedicated player looking to analyze your networth, track progression, or feed data into AI tools for optimization strategies — this tool has you covered.
-
-Built with reliability in mind, it interfaces directly with the **Official Hypixel API v2**, ensuring accurate and up-to-date information.
+# SkyBlock Profile Extractor
 
 <p align="center">
-  <img src="Screenshot.png" alt="Application Screenshot" width="800"/>
-  <br/>
-  <em>The modern Streamlit-based GUI for seamless data extraction.</em>
+  <img src="assets/logo.png" alt="SkyBlock Profile Extractor Logo" width="160"/>
+</p>
+
+[![Python Version](https://img.shields.io/badge/Python-3.9%20--%203.12-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Hypixel API v2](https://img.shields.io/badge/Hypixel%20API-v2%20Compliant-green.svg)](https://developer.hypixel.net/)
+[![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)](#automated-testing)
+
+An open-source, on-demand data extraction utility and progression analyzer for Hypixel SkyBlock. Designed for personal character backups, progression tracking, and structured dataset export via the official Hypixel API v2.
+
+<p align="center">
+  <img src="assets/Screenshot.png" alt="Application Screenshot" width="800"/>
 </p>
 
 ---
 
-## 🚀 Key Features
+## Overview
 
-| Feature                 | Description                                                                 |
-| :---------------------- | :-------------------------------------------------------------------------- |
-| **Complete Profile**    | Inventories, Skills, Slayers, Dungeons, Collections, Vault, Wardrobe, etc. |
-| **Garden Data**         | Farming stats, plot upgrades, and visitor information.                     |
-| **Museum Data**         | Donated items, appraisals, and special collectibles.                       |
-| **Guild Data**          | Detailed guild information, ranks, and member lists.                       |
-| **Economy Insights**    | Live Bazaar prices and active Auction House listings.                      |
-| **Player Status**       | Online status, recent games, and global Hypixel stats.                     |
-| **& More**              | Fire Sales, Bingo Data, SkyBlock News...                                   |
+SkyBlock Profile Extractor allows Minecraft players to query their own character data, inventory states, and progression metrics. Data is serialized into organized JSON files with SHA-256 integrity checksums.
+
+The utility provides:
+- **Streamlit Web Application (`app.py`)**: An interactive, minimal graphical interface featuring real-time progress indicators and in-browser ZIP downloads.
+- **Python CLI Tool (`extract_profile.py`)**: A command-line script for automated or non-interactive backups.
+- **Windows PowerShell Utility (`extract-profile.ps1`)**: A native script with TLS 1.2 support and request throttling.
+- **Progression Analytics Engine (`analysis.py`)**: Computes skill averages, catacombs levels, slayer ranks, and explainable next-step recommendations.
+
+> **Disclaimer**: This project is an independent open-source utility and is not affiliated with, endorsed by, or associated with Hypixel Inc. or Mojang AB.
 
 ---
 
-## 📦 Installation
+## Verified Capabilities
 
-### Prerequisites
+| Category | Extracted Datasets | Output Filename |
+| :--- | :--- | :--- |
+| **Complete Profile** | Inventories, Skills, Slayers, Dungeons, Collections, Wardrobe, Vault | `complete_profile.json` |
+| **Progression Summary** | Skill averages, Catacombs milestones, Slayer boss tiers, explainable recommendations | `profile_summary.json` |
+| **Integrity Manifest** | SHA-256 file hashes, endpoint status mapping, extraction metadata | `extraction_manifest.json` |
+| **Public Game Schemas** | Keyless items schema, skill leveling formulas, collection tiers | `skyblock_items.json`, `skyblock_skills_resource.json`, `skyblock_collections_resource.json` |
+| **Garden Data** | Garden level, plot unlock status, crop milestones, visitor count | `garden_data.json` |
+| **Museum Data** | Donated items, museum appraisals, special collectibles | `museum_data.json` |
+| **Guild Data** | Guild roster, rank tiers, guild experience | `guild_data.json` |
+| **Economy Snapshot** | Live Bazaar buy/sell orders and active profile auction house listings | `bazaar_prices.json`, `active_auctions.json` |
+| **Player Activity** | Base achievements, network level, online status, recent minigame sessions | `player_data.json`, `online_status.json`, `recent_games.json` |
+| **Community Events** | In-game announcements, fire sales, and active bingo objectives | `skyblock_news.json`, `fire_sales.json`, `bingo_data.json` |
 
-1.  **Python 3.8+**: [Download Python](https://www.python.org/downloads/)
-2.  **Hypixel API Key**: Obtain yours from the [Hypixel Developer Dashboard](https://developer.hypixel.net/).
-3.  **SkyBlock API Access**: Enable it in-game via `SkyBlock Menu` → `Settings` → `API Settings`.
+---
 
-### Steps
+## Prerequisites
+
+1. **Python 3.9 - 3.12** (for Web GUI and Python CLI)
+2. **Hypixel API Key**: Generate a Personal or Development key at the [Hypixel Developer Dashboard](https://developer.hypixel.net/).
+3. **In-game API Permissions**: Enable API access in Hypixel via `SkyBlock Menu` -> `Settings` -> `API Settings` (Skills, Inventory, Collections, Banking).
+
+---
+
+## Installation
+
+Clone the repository and install the dependencies:
 
 ```bash
 # Clone the repository
-git clone https://github.com/sizwinz/SkyBlock-Profile-Extractor.git
-cd SkyBlock-Profile-Extractor
+git clone https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor.git
+cd Hypixel-SkyBlock-Profile-Extractor
 
-# Install dependencies
-pip install requests streamlit
+# Create and activate a virtual environment
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
 
-# Run the GUI
+# Install dependencies and local package
+pip install -r requirements.txt
+pip install -e .
+
+# (Optional) Install development and testing dependencies
+pip install -r requirements-dev.txt
+```
+
+---
+
+## Usage
+
+### 1. Web Graphical Interface (Recommended)
+
+Launch the Streamlit web dashboard:
+
+```bash
 streamlit run app.py
 ```
 
-> [!TIP]
-> For a quick command-line extraction, you can also run `python extract_profile.py` or `.\extract-profile.ps1` (Windows PowerShell).
+The web application provides two distinct workflows:
+
+#### Workflow A: Player Profile Backup
+1. In desktop local mode, enter your Hypixel API key in the sidebar. On hosted instances with a preconfigured server key, the server credential is used automatically; visitor key entry is omitted to comply with Hypixel security policies.
+2. Enter your Minecraft username and click **Find Profiles**.
+3. Select your target SkyBlock profile (e.g. Tomato, Apple, Ironman).
+4. Choose the categories to export.
+5. Click **Start Extraction**. Monitor real-time progress.
+6. Review calculated progression metrics and click **Download Archive** to download a complete ZIP package with SHA-256 integrity checksums.
+
+#### Workflow B: Public Game Resources (Keyless)
+1. Navigate to the **Public Game Resources** tab.
+2. Select which public game schemas to extract (Items, Skills, Collections).
+3. Click **Extract Public Resources**. No API key or player account required.
+4. Preview the schemas directly in the web UI and download the consolidated archive.
+
+### 2. Python Command-Line Interface
+
+Run extraction directly from your terminal:
+
+```bash
+# Interactive mode
+python extract_profile.py
+
+# Specify username and profile
+python extract_profile.py Technoblade -p Tomato
+
+# Non-interactive silent execution (requires HYPIXEL_API_KEY environment variable or api_key.txt)
+python extract_profile.py Technoblade -s --zip
+
+# Custom output directory
+python extract_profile.py Technoblade --output-dir ./my_exports --zip
+```
+
+CLI flags:
+- `username`: Target Minecraft username.
+- `-p, --profile`: Target profile cute name (case-insensitive).
+- `-s, --silent`: Non-interactive mode (auto-selects most recent profile).
+- `--api-key`: Explicit Hypixel API key string.
+- `--output-dir`: Custom directory path for export.
+- `--zip`: Generate a compressed ZIP archive alongside the directory.
+
+### 3. Windows PowerShell Utility
+
+For environments without Python installed:
+
+```powershell
+# Interactive execution
+.\extract-profile.ps1
+
+# Non-interactive execution
+.\extract-profile.ps1 -Username "Technoblade" -Profile "Tomato" -Silent
+```
 
 ---
 
-## 🖥️ Usage
+## Credential Security & Policy Compliance
 
-1.  **Launch the App**: Run `streamlit run app.py`.
-2.  **Enter API Key**: Paste your Hypixel API key in the sidebar. It will be saved locally for future use.
-3.  **Enter Username**: Type in the Minecraft username of the player.
-4.  **Select Profile**: Choose from the available SkyBlock profiles.
-5.  **Extract**: Click the button and watch the magic happen!
+- **Header Authentication**: All authenticated requests pass the key via the official `API-Key` HTTP header. URL query parameters (`?key=...`) are not used.
+- **Environment Support**: Set the `HYPIXEL_API_KEY` environment variable to authenticate without storing credentials on disk.
+- **Git Exclusions**: `api_key.txt` and `.env` are explicitly excluded in `.gitignore`. Credentials are never committed.
+- **Automatic Redaction**: `api_client.py` strips API keys from exception messages, representation strings, and logs.
+- **No Continuous Tracking**: Extractions are initiated solely on demand by user command. The project maintains no background monitoring services.
 
-All data is saved into a timestamped directory: `SkyBlock_<Username>_<Profile>_<Timestamp>/`.
-
----
-
-## 📂 Output Files
-
-| File                     | Contents                                                     |
-| :----------------------- | :----------------------------------------------------------- |
-| `complete_profile.json`  | The holy grail — contains nearly all player-specific data.   |
-| `garden_data.json`       | Detailed Garden and farming statistics.                      |
-| `museum_data.json`       | Museum collection and appraisal data.                        |
-| `bazaar_prices.json`     | Current Bazaar market data for networth calculations.        |
-| `player_data.json`       | Global Hypixel statistics for the player.                    |
-| `guild_data.json`        | Guild information (if applicable).                           |
+For detailed policy documentation, refer to [docs/API_USAGE.md](docs/API_USAGE.md).
 
 ---
 
-## 🧠 AI-Powered Analysis
+## Project Repository Structure
 
-Leverage the power of Large Language Models (like ChatGPT or Claude) to analyze your extracted data.
-
-**Example Prompt:**
-
-> Analyze my `complete_profile.json` file. Using the item values from `bazaar_prices.json`, calculate my approximate total networth and identify my most valuable items. Suggest 3 areas I should focus on for progression.
+```text
+Hypixel-SkyBlock-Profile-Extractor/
+├── .github/
+│   └── workflows/
+│       └── tests.yml          # Automated CI testing matrix
+├── assets/                    # Project visual branding and screenshots
+│   ├── logo.png
+│   └── Screenshot.png
+├── docs/                      # Architectural and compliance documentation
+│   ├── API_USAGE.md           # API v2 specifications and policy matrix
+│   └── PERSONAL_API_APPLICATION.md # Dashboard application template
+├── src/
+│   └── skyblock_extractor/    # Core Python library
+│       ├── __init__.py        # Package exports and versioning
+│       ├── api_client.py      # Requests HTTP client, header auth, backoff
+│       ├── profile_service.py # Player UUID and profile discovery
+│       ├── extractor.py       # Resilient multi-endpoint orchestrator
+│       ├── analysis.py        # Deterministic progression analytics
+│       ├── exporter.py        # JSON serialization, SHA-256 manifests, ZIP
+│       └── cli.py             # CLI command logic
+├── tests/                     # Automated unit and integration test suite
+│   ├── test_analysis.py
+│   ├── test_api_client.py
+│   ├── test_app.py
+│   ├── test_cli.py
+│   ├── test_exporter.py
+│   ├── test_extractor.py
+│   └── test_profile_service.py
+├── app.py                     # Streamlit web application entry point
+├── extract_profile.py         # Standalone CLI entry wrapper
+├── extract-profile.ps1        # Standalone Windows PowerShell utility
+├── pyproject.toml             # Package metadata, scripts, pytest config
+├── requirements.txt           # Core production dependencies
+├── requirements-dev.txt       # Development and testing dependencies
+├── CONTRIBUTING.md            # Guidelines for open source contributors
+├── LICENSE                    # MIT License
+└── README.md                  # Project overview and documentation
+```
 
 ---
 
-## 🤝 Contributing
+## Export File Structure
 
-Contributions are welcome! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines on how to get involved.
+Extracted datasets are organized into a timestamped directory:
+
+```text
+SkyBlock_<Username>_<ProfileName>_<Timestamp>/
+├── complete_profile.json      # Full raw member data (skills, inventories, slayers, dungeons)
+├── profile_summary.json       # Deterministic progression metrics and recommendations
+├── extraction_manifest.json   # Integrity manifest containing SHA-256 hashes for all files
+├── README.txt                 # Human-readable execution summary report
+├── player_data.json           # Global Hypixel player statistics
+├── garden_data.json           # Garden plots, upgrades, and visitor counts
+├── museum_data.json           # Donated museum equipment and value appraisals
+├── guild_data.json            # Guild membership and tier information
+├── bazaar_prices.json         # Current market buy/sell order book snapshot
+├── active_auctions.json       # Profile auction listings
+├── online_status.json         # Online status indicator
+├── recent_games.json          # Recent minigame participation
+├── fire_sales.json            # Active cosmetics fire sales
+├── bingo_data.json            # Profile bingo events
+└── skyblock_news.json         # Developer updates and changelogs
+```
 
 ---
 
-## 📄 License
+## Known Limitations
 
-This project is licensed under the **MIT License**. See the [`LICENSE`](LICENSE) file for details.
+- **Net Worth Evaluation**: Bazaar prices provide raw unit values but do not account for customized enchants, reforge stones, master stars, gemstones, or auction rarity. `bazaar_prices.json` should not be interpreted as an official total net worth valuation.
+- **API Privacy Settings**: If a player has disabled API access in their in-game settings (`API Settings` menu), inventories, collections, or banking fields will return empty payloads. The application reports these conditions transparently in `profile_summary.json`.
+- **NBT Encodings**: Items stored in inventories and chests are exported in their raw API representation (base64 gzip NBT strings).
+- **Point-in-Time Nature**: Exports represent an instantaneous snapshot at the moment of extraction.
 
 ---
 
-<div align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/sizwinz">sizwinz</a>. Not affiliated with Hypixel Inc.</sub>
+## Automated Testing
+
+Run the test suite using pytest:
+
+```bash
+pytest -v
+```
+
+The automated test suite verifies:
+- API authentication headers and credential redaction.
+- HTTP 403, 429, and 500 error resilience with backoff.
+- Mojang UUID formatting (both dashed and undashed member lookups).
+- Resilient partial extraction when optional endpoints fail.
+- Progression analytics and rule-based priority generation.
+- Integrity manifest generation with valid SHA-256 checksums.
+
+---
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for code style guidelines, test requirements, and cross-platform parity standards.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+<div align='center'>
+  <sub>Maintained by <a href='https://github.com/sizwinz'>sizwinz</a>. Independent utility not affiliated with Hypixel Inc. or Mojang AB.</sub>
 </div>
