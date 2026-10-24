@@ -163,6 +163,29 @@ def test_fetch_endpoint_429_retry_recovery(monkeypatch):
     assert sleep_calls[0] > 0
 
 
+@responses.activate
+def test_fetch_endpoint_in_memory_ttl_cache():
+    client = HypixelAPIClient(api_key="valid-key-12345678-1234-1234-1234")
+
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/resources/skyblock/items",
+        json={"success": True, "items": [{"id": "ITEM_1"}]},
+        status=200,
+    )
+
+    # First fetch should make HTTP request and populate cache
+    data1 = client.fetch_endpoint("resources/skyblock/items", require_auth=False)
+    assert data1["items"][0]["id"] == "ITEM_1"
+    assert len(responses.calls) == 1
+
+    # Second fetch should hit the in-memory cache and not make a second HTTP request
+    data2 = client.fetch_endpoint("resources/skyblock/items", require_auth=False)
+    assert data2["items"][0]["id"] == "ITEM_1"
+    assert len(responses.calls) == 1
+
+
+
 
 @responses.activate
 def test_get_skyblock_profiles_and_profile():

@@ -11,6 +11,14 @@ HYPIXEL_API_URL = "https://api.hypixel.net/v2"
 MOJANG_API_URL = "https://api.mojang.com"
 DEFAULT_USER_AGENT = "SkyBlock-Profile-Extractor/2.1"
 DEFAULT_TIMEOUT = 30.0
+DEFAULT_CACHE_TTLS: Dict[str, float] = {
+    "resources/skyblock/items": 3600.0,
+    "resources/skyblock/skills": 3600.0,
+    "resources/skyblock/collections": 3600.0,
+    "skyblock/bazaar": 60.0,
+    "skyblock/news": 300.0,
+    "skyblock/firesales": 300.0,
+}
 
 
 class SkyBlockExtractorError(Exception):
@@ -51,13 +59,20 @@ class HypixelAPIClient:
         user_agent: str = DEFAULT_USER_AGENT,
         max_retries: int = 3,
         max_retry_delay: float = 10.0,
+        enable_cache: bool = True,
     ):
         self._api_key = api_key.strip() if api_key else ""
         self.timeout = timeout
         self.user_agent = user_agent
         self.max_retries = max_retries
         self.max_retry_delay = max_retry_delay
+        self.enable_cache = enable_cache
+        self._cache: Dict[Tuple[str, Tuple[Tuple[str, Any], ...]], Tuple[float, Dict[str, Any]]] = {}
         self.session = requests.Session()
+
+    def clear_cache(self) -> None:
+        """Clear all in-memory cached responses."""
+        self._cache.clear()
 
     def __repr__(self) -> str:
         return f"<HypixelAPIClient authenticated={bool(self._api_key)}>"
@@ -97,10 +112,26 @@ class HypixelAPIClient:
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         require_auth: bool = True,
+        cache_ttl: Optional[float] = None,
     ) -> Dict[str, Any]:
-        """Query a Hypixel API v2 endpoint using HTTP header authentication."""
+        """Query a Hypixel API v2 endpoint with in-memory TTL caching and 429 backoff."""
         clean_endpoint = endpoint.lstrip("/")
         url = f"{HYPIXEL_API_URL}/{clean_endpoint}"
+
+        # Determine effective cache TTL
+        ttl = cache_ttl
+        if ttl is None:
+            ttl = DEFAULT_CACHE_TTLS.get(clean_endpoint)
+
+        cache_key = None
+        if self.enable_cache and ttl and ttl > 0:
+            param_tuple = tuple(sorted((params or {}).items()))
+            cache_key = (clean_endpoint, param_tuple)
+            cached = self._cache.get(cache_key)
+            if cached:
+                timestamp, cached_data = cached
+                if (time.time() - timestamp) < ttl:
+                    return cached_data
 
         headers = {
             "User-Agent": self.user_agent,
@@ -144,6 +175,9 @@ class HypixelAPIClient:
                 if not data.get("success", False):
                     cause = data.get("cause", "Unknown Hypixel API error")
                     raise APIResponseError(f"Hypixel API Error: {cause}")
+
+                if cache_key is not None and self.enable_cache:
+                    self._cache[cache_key] = (time.time(), data)
 
                 return data
 
