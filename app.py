@@ -313,12 +313,19 @@ if st.session_state.profiles:
                 categories=selected_categories,
             )
 
+            # Prioritize freshly extracted profile data if available
+            fresh_profile_data = None
+            if "profile" in results and results["profile"].status == "success" and results["profile"].data:
+                fresh_profile_data = results["profile"].data
+
+            profile_payload_for_analysis = fresh_profile_data or target_profile.get("data", target_profile)
+
             # Analyze progression
             analyzer = ProfileAnalyzer()
             auxiliary = {cat: res.data for cat, res in results.items() if res.status == "success" and res.data}
             summary = analyzer.analyze(
                 player_uuid=st.session_state.player_uuid,
-                profile_data=target_profile.get("data", target_profile),
+                profile_data=profile_payload_for_analysis,
                 auxiliary_data=auxiliary,
             )
 

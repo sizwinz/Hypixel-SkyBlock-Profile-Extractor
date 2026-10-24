@@ -140,12 +140,19 @@ def extract_data(
 
     results = extractor.extract(player_uuid=uuid, profile=profile)
 
+    # Prioritize freshly extracted profile data if available
+    fresh_profile_data = None
+    if "profile" in results and results["profile"].status == "success" and results["profile"].data:
+        fresh_profile_data = results["profile"].data
+
+    profile_payload_for_analysis = fresh_profile_data or profile.get("data", profile)
+
     # Perform progression analysis
     analyzer = ProfileAnalyzer()
     auxiliary = {cat: res.data for cat, res in results.items() if res.status == "success" and res.data}
     summary = analyzer.analyze(
         player_uuid=uuid,
-        profile_data=profile.get("data", profile),
+        profile_data=profile_payload_for_analysis,
         auxiliary_data=auxiliary,
     )
 
