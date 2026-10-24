@@ -91,3 +91,29 @@ def test_extractor_items_endpoint_keyless():
     assert call.request.url == "https://api.hypixel.net/v2/resources/skyblock/items"
     assert "API-Key" not in call.request.headers
 
+
+def test_classify_extraction_outcome_states():
+    from skyblock_extractor.extractor import ExtractionResult, classify_extraction_outcome
+
+    r_success = ExtractionResult("p", "p.json", "desc", "success")
+    r_failed = ExtractionResult("g", "g.json", "desc", "failed", error_message="Error")
+
+    # Complete success
+    outcome_all_ok = classify_extraction_outcome({"p": r_success})
+    assert outcome_all_ok["status"] == "complete_success"
+    assert outcome_all_ok["success_count"] == 1
+    assert outcome_all_ok["total_count"] == 1
+
+    # Partial success
+    outcome_partial = classify_extraction_outcome({"p": r_success, "g": r_failed})
+    assert outcome_partial["status"] == "partial_success"
+    assert outcome_partial["success_count"] == 1
+    assert outcome_partial["total_count"] == 2
+
+    # Complete failure
+    outcome_all_fail = classify_extraction_outcome({"g": r_failed})
+    assert outcome_all_fail["status"] == "complete_failure"
+    assert outcome_all_fail["success_count"] == 0
+    assert outcome_all_fail["total_count"] == 1
+
+

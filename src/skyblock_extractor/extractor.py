@@ -210,3 +210,27 @@ class ProfileExtractor:
                     self.progress_callback(step, total, cat, "failed")
 
         return results
+
+
+def classify_extraction_outcome(results: Dict[str, ExtractionResult]) -> Dict[str, Any]:
+    """Classify results into complete_success, partial_success, or complete_failure."""
+    total_count = len(results)
+    success_count = sum(1 for r in results.values() if r.status == "success")
+    failed_count = sum(1 for r in results.values() if r.status == "failed")
+    skipped_count = sum(1 for r in results.values() if r.status == "skipped")
+
+    if total_count == 0 or success_count == 0:
+        status = "complete_failure"
+    elif success_count == total_count:
+        status = "complete_success"
+    else:
+        status = "partial_success"
+
+    return {
+        "status": status,
+        "total_count": total_count,
+        "success_count": success_count,
+        "failed_count": failed_count,
+        "skipped_count": skipped_count,
+    }
+
