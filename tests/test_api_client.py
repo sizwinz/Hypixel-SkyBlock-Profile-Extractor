@@ -1,4 +1,5 @@
 import pytest
+import responses
 
 def test_custom_exception_hierarchy():
     from api_client import (
@@ -45,3 +46,20 @@ def test_client_repr_safe():
 
     unauth_client = HypixelAPIClient()
     assert repr(unauth_client) == "<HypixelAPIClient authenticated=False>"
+
+
+@responses.activate
+def test_get_player_uuid_success():
+    from api_client import HypixelAPIClient
+
+    client = HypixelAPIClient()
+    responses.add(
+        responses.GET,
+        "https://api.mojang.com/users/profiles/minecraft/Technoblade",
+        json={"name": "Technoblade", "id": "b876ec32e396476ba1158438d83c67d4"},
+        status=200,
+    )
+
+    dashed_uuid, raw_uuid = client.get_player_uuid("Technoblade")
+    assert raw_uuid == "b876ec32e396476ba1158438d83c67d4"
+    assert dashed_uuid == "b876ec32-e396-476b-a115-8438d83c67d4"
