@@ -37,15 +37,16 @@ All requests use the official Hypixel API v2 (`https://api.hypixel.net/v2`) with
 - `v2/guild`: Used to display guild membership information.
 - `v2/skyblock/bazaar` & `v2/skyblock/auction`: Used to capture market pricing context for inventory review.
 - `v2/skyblock/news` & `v2/skyblock/firesales`: Used to inspect community event and update logs.
+- `v2/resources/skyblock/items`: Keyless public resource endpoint used to map official item schema and registry definitions.
 
 ---
 
 ## 4. Expected Request Volume & Pacing
 
-- **Volume:** Low, on-demand traffic. A complete extraction sequence makes approximately 10 to 12 HTTP requests.
+- **Volume:** Low, on-demand traffic. A complete extraction sequence makes approximately 10 to 13 HTTP requests.
 - **Trigger:** Initiated exclusively by manual user action.
 - **Frequency:** Typical personal use is 1 to 3 times per week when reviewing gear or skill milestones.
-- **Concurrency:** Sequential requests with rate limiting delay (minimum 250ms - 500ms between calls).
+- **Concurrency & Resilience:** Sequential requests. The Python engine implements bounded exponential backoff on HTTP 429 using `RateLimit-Reset` and in-memory TTL caching for static catalog data. The PowerShell utility includes paced delay (`$Script:RateLimitMs = 500`).
 - **Prohibited Patterns:** No continuous player tracking, no automated cron jobs, no background scraping, and no mass database collection.
 
 ---

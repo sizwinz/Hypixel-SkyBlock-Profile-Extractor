@@ -4,7 +4,7 @@
   <img src="assets/logo.png" alt="SkyBlock Profile Extractor Logo" width="160"/>
 </p>
 
-[![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
+[![Python Version](https://img.shields.io/badge/Python-3.9%20--%203.12-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Hypixel API v2](https://img.shields.io/badge/Hypixel%20API-v2%20Compliant-green.svg)](https://developer.hypixel.net/)
 [![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)](#automated-testing)
@@ -49,7 +49,7 @@ The utility provides:
 
 ## Prerequisites
 
-1. **Python 3.8+** (for Web GUI and Python CLI)
+1. **Python 3.9 - 3.12** (for Web GUI and Python CLI)
 2. **Hypixel API Key**: Generate a Personal or Development key at the [Hypixel Developer Dashboard](https://developer.hypixel.net/).
 3. **In-game API Permissions**: Enable API access in Hypixel via `SkyBlock Menu` -> `Settings` -> `API Settings` (Skills, Inventory, Collections, Banking).
 
