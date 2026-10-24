@@ -1,279 +1,435 @@
-import streamlit as st
-import extract_profile
-import time
-from pathlib import Path
+"""Streamlit Web Application for Hypixel SkyBlock Profile Extraction and Analysis."""
 
-# --- PAGE CONFIGURATION ---
+import io
+import os
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import streamlit as st
+
+from api_client import (
+    AuthenticationError,
+    HypixelAPIClient,
+    PlayerNotFoundError,
+    ProfileNotFoundError,
+    RateLimitExceededError,
+    SkyBlockExtractorError,
+)
+from profile_service import normalize_profiles
+from extractor import ProfileExtractor, ExtractionResult
+from analysis import ProfileAnalyzer
+from exporter import ProfileExporter
+
+APP_VERSION = "2.1.0"
+
+# --- PAGE SETUP ---
 st.set_page_config(
     page_title="SkyBlock Profile Extractor",
-    page_icon="⚔️",
+    page_icon="🛡️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-# --- CUSTOM CSS STYLING ---
+# --- REFINED PROFESSIONAL STYLING ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
-
-    /* Global Styles */
+    /* Executive typography & restrained contrast */
     .stApp {
-        font-family: 'Outfit', sans-serif;
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        color: #e0e0e0;
-    }
-
-    /* Titles and Headings */
-    h1, h2, h3 {
-        color: #ffffff;
-        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        background-color: #0d1117;
+        color: #c9d1d9;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     }
     
-    h1 {
-        font-weight: 700;
-        background: -webkit-linear-gradient(45deg, #00d2ff, #3a7bd5);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: glow 2s ease-in-out infinite alternate;
-    }
-
-
-    /* Input Fields */
-    .stTextInput > div > div > input {
-        background-color: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        color: #ffffff;
-        transition: all 0.3s ease;
-    }
-
-    .stTextInput > div > div > input:focus {
-        border-color: #00d2ff;
-        box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    /* Buttons */
-    .stButton > button {
-        background: linear-gradient(45deg, #FF512F 0%, #DD2476 100%);
-        color: white;
-        border: none;
-        padding: 0.6rem 2rem;
-        border-radius: 50px;
+    /* Headers */
+    h1, h2, h3, h4 {
+        color: #f0f6fc;
         font-weight: 600;
-        transition: transform 0.2s, box-shadow 0.2s;
-        box-shadow: 0 5px 15px rgba(221, 36, 118, 0.4);
-    }
-
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(221, 36, 118, 0.6);
-        background: linear-gradient(45deg, #FF512F 0%, #DD2476 100%); /* Maintain gradient */
-        color: white;
-    }
-
-    .stButton > button:active {
-        transform: translateY(1px);
-    }
-
-    /* Secondary Button (if needed) */
-    div[data-testid="stForm"] .stButton > button {
-         background: linear-gradient(45deg, #00d2ff 0%, #3a7bd5 100%);
-         box-shadow: 0 5px 15px rgba(58, 123, 213, 0.4);
-    }
-
-    /* Expander/Cards */
-    .streamlit-expanderHeader {
-        background-color: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-        color: #fff;
+        letter-spacing: -0.02em;
     }
     
-    div[data-testid="stExpander"] {
-        background-color: rgba(0, 0, 0, 0.2);
-        border-radius: 10px;
-        padding: 10px;
-        border: 1px solid rgba(255,255,255,0.05);
-    }
-
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: rgba(22, 33, 62, 0.95);
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    /* Success/Info Messages */
-    .stSuccess {
-        background-color: rgba(0, 200, 83, 0.1);
-        border: 1px solid rgba(0, 200, 83, 0.3);
-        color: #00e676;
+    /* Clean Cards */
+    .metric-card {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
     }
     
-    .stInfo {
-        background-color: rgba(41, 121, 255, 0.1);
-        border: 1px solid rgba(41, 121, 255, 0.3);
-        color: #448aff;
+    .metric-val {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #58a6ff;
+    }
+    
+    .metric-label {
+        font-size: 0.85rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    /* Badge Pills */
+    .badge-ok {
+        background-color: rgba(46, 160, 67, 0.15);
+        color: #3fb950;
+        border: 1px solid rgba(46, 160, 67, 0.4);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .badge-fail {
+        background-color: rgba(248, 81, 73, 0.15);
+        color: #f85149;
+        border: 1px solid rgba(248, 81, 73, 0.4);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .badge-mode {
+        background-color: rgba(88, 166, 255, 0.15);
+        color: #58a6ff;
+        border: 1px solid rgba(88, 166, 255, 0.3);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
     }
 
-    /* Radios */
-    .stRadio > div {
-        background-color: rgba(0,0,0,0.2);
-        padding: 20px;
-        border-radius: 10px;
+    /* Subdued Buttons */
+    .stButton > button {
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease;
     }
-
 </style>
 """, unsafe_allow_html=True)
 
-# --- SIDEBAR: CONFIGURATION ---
-with st.sidebar:
-    st.image("https://media.tenor.com/V7X8g2y0u90AAAAi/minecraft-sword.gif", width=50) # Just a fun placeholder or use an icon
-    st.title("Settings")
-    
-    # Try to load API key
-    default_key = ""
-    try:
-        if Path("api_key.txt").exists():
-            default_key = Path("api_key.txt").read_text().strip()
-    except:
-        pass
 
-    api_key_input = st.text_input("Hypixel API Key", value=default_key, type="password", help="Get this from developer.hypixel.net")
-    
-    if api_key_input and api_key_input != default_key:
-        # Save new key
-        try:
-            with open("api_key.txt", "w") as f:
-                f.write(api_key_input)
-            st.toast("API Key saved!", icon="💾")
-        except Exception as e:
-            st.error(f"Could not save API key: {e}")
-
-    st.markdown("---")
-    st.markdown("### About")
-    st.info("This tool extracts comprehensive SkyBlock profile data for analysis.")
-
-# --- MAIN CONTENT ---
-col1, col2 = st.columns([3, 1])
-
-with col1:
-    st.title("SkyBlock Profile Extractor")
-    st.markdown("*Export your Hypixel SkyBlock data in seconds.*")
-
-with col2:
-    # Just a visual element
-    pass
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# --- USER INPUT SECTION ---
-with st.container():    
-    c1, c2 = st.columns([3, 1])
-    with c1:
-        username = st.text_input("Minecraft Username", placeholder="e.g. Technoblade")
-    with c2:
-        st.write("") # Spacer
-        st.write("") # Spacer
-        fetch_btn = st.button("🔍 Find Profiles", use_container_width=True)
-
-# --- SESSION STATE MANAGEMENT ---
+# --- STATE INITIALIZATION ---
 if "profiles" not in st.session_state:
     st.session_state.profiles = None
-if "uuid" not in st.session_state:
-    st.session_state.uuid = None
-if "real_username" not in st.session_state:
-    st.session_state.real_username = None
+if "player_uuid" not in st.session_state:
+    st.session_state.player_uuid = None
+if "player_username" not in st.session_state:
+    st.session_state.player_username = None
+if "last_queried_username" not in st.session_state:
+    st.session_state.last_queried_username = None
+if "extraction_results" not in st.session_state:
+    st.session_state.extraction_results = None
+if "summary" not in st.session_state:
+    st.session_state.summary = None
+if "zip_buffer" not in st.session_state:
+    st.session_state.zip_buffer = None
+if "zip_filename" not in st.session_state:
+    st.session_state.zip_filename = None
 
-# --- LOGIC: FETCH PROFILES ---
-if fetch_btn and username and api_key_input:
-    with st.spinner("Talking to Mojang & Hypixel..."):
+
+# --- SIDEBAR: AUTHENTICATION & CONFIG ---
+with st.sidebar:
+    st.title("Configuration")
+    
+    # Resolve initial default key
+    env_key = os.environ.get("HYPIXEL_API_KEY", "")
+    key_file = Path("api_key.txt")
+    file_key = ""
+    if key_file.exists():
         try:
-            # Get UUID
-            uuid_fmt, uuid_raw = extract_profile.get_player_uuid(username)
-            st.session_state.uuid = uuid_fmt
-            
-            # Get Profiles
-            profiles = extract_profile.get_profiles(uuid_fmt, api_key_input)
-            st.session_state.profiles = profiles
-            st.session_state.real_username = username # Could extract real name from API if function returned it
-            
-            st.success(f"Found {len(profiles)} profiles for {username}!")
-            
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
-            st.session_state.profiles = None
+            file_key = key_file.read_text(encoding="utf-8").strip()
+        except Exception:
+            pass
 
-elif fetch_btn and not api_key_input:
-    st.warning("Please enter your Hypixel API Key in the sidebar.")
-
-# --- LOGIC: SELECT AND EXTRACT ---
-if st.session_state.profiles:
-    st.divider()
-    st.subheader("Select Profile")
+    default_key = env_key or file_key
     
-    # Create friendly labels for the radio button
-    profile_options = {
-        f"{p['name']} ({p['game_mode']}) - Last Save: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(p['last_save']/1000))}": p 
-        for p in st.session_state.profiles
-    }
-    
-    selected_label = st.radio(
-        "Choose a profile to download:", 
-        options=list(profile_options.keys()),
-        index=0
+    api_key_input = st.text_input(
+        "Hypixel API Key",
+        value=default_key,
+        type="password",
+        help="Personal or Development API Key from developer.hypixel.net",
     )
     
-    if selected_label:
-        selected_profile = profile_options[selected_label]
+    save_key = st.checkbox("Persist key locally to api_key.txt", value=bool(file_key))
+    if save_key and api_key_input and api_key_input != file_key:
+        try:
+            key_file.write_text(api_key_input.strip(), encoding="utf-8")
+            st.toast("API key saved locally.", icon="💾")
+        except Exception as e:
+            st.error(f"Failed to persist key: {e}")
+    elif not save_key and key_file.exists():
+        try:
+            key_file.unlink()
+        except Exception:
+            pass
+
+    st.markdown("---")
+    with st.expander("API Security & Policy", expanded=False):
+        st.markdown("""
+        **Compliance Checklist:**
+        - Requests use HTTP header auth (`API-Key`).
+        - Data is fetched on-demand per user click.
+        - No continuous polling or player monitoring.
+        - Free, open-source personal utility.
+        """)
+        st.caption("[Hypixel Developer Policies](https://developer.hypixel.net/policies/)")
+
+    st.markdown("---")
+    st.caption(f"SkyBlock Profile Extractor v{APP_VERSION}")
+    st.caption("Not affiliated with or endorsed by Hypixel Inc.")
+
+
+# --- MAIN INTERFACE ---
+st.title("SkyBlock Profile Extractor")
+st.markdown("Export raw Hypixel SkyBlock profile data and deterministic progression analytics for personal analysis.")
+
+# STEP 1: USERNAME INPUT
+c_input, c_btn = st.columns([3, 1])
+with c_input:
+    input_username = st.text_input(
+        "Minecraft Username",
+        placeholder="e.g. Technoblade",
+        label_visibility="collapsed",
+    )
+with c_btn:
+    find_btn = st.button("Find Profiles", use_container_width=True, type="primary")
+
+# Reset downstream state if username changes
+if input_username != st.session_state.last_queried_username:
+    st.session_state.profiles = None
+    st.session_state.extraction_results = None
+    st.session_state.summary = None
+    st.session_state.zip_buffer = None
+
+if find_btn:
+    if not input_username.strip():
+        st.warning("Please enter a Minecraft username.")
+    elif not api_key_input.strip():
+        st.warning("Please provide a Hypixel API key in the sidebar.")
+    else:
+        st.session_state.last_queried_username = input_username.strip()
+        client = HypixelAPIClient(api_key=api_key_input.strip())
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        if st.button("🚀 Extract Data", type="primary", use_container_width=True):
-            output_placeholder = st.empty()
-            progress_bar = st.progress(0)
-            
+        with st.spinner("Resolving player and fetching profiles..."):
             try:
-                # We can't easily get real-time progress from the function without modifying it,
-                # so we'll simulate a bit or just run it.
-                # For a better UX, let's wrap the extraction logic here or trust the function is fast.
-                
-                with st.spinner("Extracting data... (This might take a moment)"):
-                    # Call the extraction function
-                    # Note: We need to handle the prints inside extract_main or just let it run.
-                    # Since we imported extract_profile, we can call extract_data directly.
-                    
-                    out_dir, count = extract_profile.extract_data(
-                        st.session_state.uuid, 
-                        selected_profile, 
-                        api_key_input, 
-                        st.session_state.real_username or username
-                    )
-                    
-                    progress_bar.progress(100)
-                    
-                    st.balloons()
-                    
-                    st.markdown(f"""
-                    <div style="background-color: rgba(0, 255, 127, 0.2); padding: 20px; border-radius: 10px; border: 1px solid #00ff7f; text-align: center;">
-                        <h2 style="margin:0; color: #00ff7f;">Success!</h2>
-                        <p style="font-size: 1.2em;">Extracted <b>{count}</b> files.</p>
-                        <p style="font-family: monospace; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px;">{out_dir}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    with st.expander("📂 View Extracted Files"):
-                        # List files in the output directory
-                        files = sorted([f.name for f in out_dir.iterdir() if f.is_file()])
-                        for f in files:
-                            st.code(f, language="text")
+                dashed_uuid, raw_uuid = client.get_player_uuid(input_username.strip())
+                st.session_state.player_uuid = dashed_uuid
+                st.session_state.player_username = input_username.strip()
 
-            except Exception as e:
-                st.error(f"Extraction failed: {str(e)}")
+                raw_profiles = client.get_skyblock_profiles(dashed_uuid)
+                if not raw_profiles:
+                    st.error("No SkyBlock profiles found for this account.")
+                    st.session_state.profiles = None
+                else:
+                    normalized = normalize_profiles(raw_profiles, dashed_uuid)
+                    st.session_state.profiles = normalized
+                    st.session_state.extraction_results = None
+                    st.session_state.summary = None
+                    st.session_state.zip_buffer = None
+                    st.success(f"Found {len(normalized)} profile(s) for **{input_username.strip()}**.")
+            except PlayerNotFoundError as e:
+                st.error(f"Player resolution error: {e}")
+                st.session_state.profiles = None
+            except AuthenticationError as e:
+                st.error(f"Authentication error: {e}")
+                st.session_state.profiles = None
+            except RateLimitExceededError as e:
+                st.error(f"Rate limit exceeded: {e}")
+                st.session_state.profiles = None
+            except SkyBlockExtractorError as e:
+                st.error(f"API Error: {e}")
+                st.session_state.profiles = None
 
-# --- FOOTER ---
-st.markdown("<br><br><br>", unsafe_allow_html=True)
-st.markdown("""
-<div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em;">
-    SkyBlock Profile Extractor • Built with Streamlit • Designed for Sahaj33
-</div>
-""", unsafe_allow_html=True)
+
+# STEP 2 & 3: PROFILE SELECTION & CATEGORY CONFIGURATION
+if st.session_state.profiles:
+    st.divider()
+    st.subheader("Select Profile & Categories")
+
+    col_profile, col_categories = st.columns([1, 1])
+
+    with col_profile:
+        profile_choices = {}
+        for p in st.session_state.profiles:
+            last_save_fmt = (
+                datetime.fromtimestamp(p["last_save"] / 1000).strftime("%Y-%m-%d %H:%M")
+                if p["last_save"] > 0
+                else "Never"
+            )
+            mode_tag = f"[{p['game_mode'].upper()}]" if p["game_mode"] != "normal" else ""
+            label = f"{p['name']} {mode_tag} — Last Save: {last_save_fmt}"
+            profile_choices[label] = p
+
+        selected_label = st.radio(
+            "Target Profile:",
+            options=list(profile_choices.keys()),
+            index=0,
+        )
+        target_profile = profile_choices[selected_label]
+
+    with col_categories:
+        st.markdown("**Extraction Categories:**")
+        chk_profile = st.checkbox("Complete Profile (Inventories, Skills, Slayers, Dungeons)", value=True, disabled=True)
+        chk_player = st.checkbox("Global Player & Minigame Stats", value=True)
+        chk_garden = st.checkbox("Garden & Farming Data", value=True)
+        chk_museum = st.checkbox("Museum Collection & Appraisals", value=True)
+        chk_guild = st.checkbox("Guild Membership & Experience", value=True)
+        chk_bazaar = st.checkbox("Bazaar Market Snapshot", value=True)
+        chk_auction = st.checkbox("Active Profile Auctions", value=True)
+        chk_news = st.checkbox("SkyBlock In-game News", value=False)
+        chk_firesales = st.checkbox("Active Fire Sales", value=False)
+
+    selected_categories = ["profile"]
+    if chk_player: selected_categories.append("player")
+    if chk_garden: selected_categories.append("garden")
+    if chk_museum: selected_categories.append("museum")
+    if chk_guild: selected_categories.append("guild")
+    if chk_bazaar: selected_categories.append("bazaar")
+    if chk_auction: selected_categories.append("auction")
+    if chk_news: selected_categories.append("news")
+    if chk_firesales: selected_categories.append("firesales")
+
+    # STEP 4: EXTRACTION TRIGGER
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Start Extraction", type="primary", use_container_width=True):
+        client = HypixelAPIClient(api_key=api_key_input.strip())
+        progress_bar = st.progress(0, text="Initializing extraction pipeline...")
+        status_text = st.empty()
+
+        def update_progress(step: int, total: int, category: str, status: str):
+            pct = int((step / total) * 100)
+            progress_bar.progress(pct, text=f"Fetching category: {category} ({step}/{total})")
+
+        extractor = ProfileExtractor(client=client, progress_callback=update_progress)
+
+        with st.spinner("Extracting datasets from Hypixel API v2..."):
+            results = extractor.extract(
+                player_uuid=st.session_state.player_uuid,
+                profile=target_profile,
+                categories=selected_categories,
+            )
+
+            # Analyze progression
+            analyzer = ProfileAnalyzer()
+            auxiliary = {cat: res.data for cat, res in results.items() if res.status == "success" and res.data}
+            summary = analyzer.analyze(
+                player_uuid=st.session_state.player_uuid,
+                profile_data=target_profile.get("data", target_profile),
+                auxiliary_data=auxiliary,
+            )
+
+            # Build in-memory bundle
+            exporter = ProfileExporter(
+                username=st.session_state.player_username,
+                player_uuid=st.session_state.player_uuid,
+                profile_name=target_profile["name"],
+                profile_id=target_profile["profile_id"],
+                results=results,
+                summary=summary,
+            )
+
+            zip_buffer = exporter.build_zip_in_memory()
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            zip_name = f"SkyBlock_{st.session_state.player_username}_{target_profile['name']}_{ts}.zip"
+
+            st.session_state.extraction_results = results
+            st.session_state.summary = summary
+            st.session_state.zip_buffer = zip_buffer
+            st.session_state.zip_filename = zip_name
+
+            progress_bar.progress(100, text="Extraction completed successfully.")
+            st.toast("Data extracted and ready for download.", icon="✅")
+
+
+# STEP 5: RESULTS & DOWNLOADS
+if st.session_state.extraction_results and st.session_state.summary:
+    st.divider()
+    st.subheader("Extraction Summary & Analytics")
+
+    summary = st.session_state.summary
+    results = st.session_state.extraction_results
+
+    # Highlight metrics
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Skill Average</div>
+            <div class="metric-val">{summary.get('skill_average', 'N/A')}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with m2:
+        dungeons = summary.get("dungeons", {})
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Catacombs Level</div>
+            <div class="metric-val">{dungeons.get('catacombs_level', 0)}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with m3:
+        slayers = summary.get("slayer", {})
+        zombie_lvl = slayers.get("zombie", {}).get("level", 0)
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Zombie Slayer</div>
+            <div class="metric-val">Lvl {zombie_lvl}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with m4:
+        ok_count = sum(1 for r in results.values() if r.status == "success")
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Datasets Acquired</div>
+            <div class="metric-val">{ok_count}/{len(results)}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Downloads section
+    st.markdown("### Download Data Package")
+    st.download_button(
+        label=f"Download Archive ({st.session_state.zip_filename})",
+        data=st.session_state.zip_buffer.getvalue(),
+        file_name=st.session_state.zip_filename,
+        mime="application/zip",
+        type="primary",
+        use_container_width=True,
+    )
+
+    # Progression Priorities Tab
+    tab_priorities, tab_endpoints, tab_files = st.tabs([
+        "Progression Priorities", "Endpoint Status", "File Previews"
+    ])
+
+    with tab_priorities:
+        st.markdown("**Rule-Based Next Steps:**")
+        priorities = summary.get("progression_priorities", [])
+        for item in priorities:
+            st.info(item)
+
+        st.caption("Note: Recommendations are derived using deterministic game logic. Progression data depends on enabled in-game API settings.")
+
+    with tab_endpoints:
+        st.markdown("**Endpoint Extraction Status:**")
+        status_rows = []
+        for cat, r in results.items():
+            badge = '<span class="badge-ok">SUCCESS</span>' if r.status == "success" else '<span class="badge-fail">FAILED</span>'
+            status_rows.append({
+                "Category": r.description,
+                "Filename": r.filename,
+                "Status": r.status.upper(),
+                "Details": r.error_message or "Extracted cleanly",
+            })
+        st.table(status_rows)
+
+    with tab_files:
+        preview_category = st.selectbox(
+            "Select file to inspect:",
+            options=[k for k, v in results.items() if v.status == "success"],
+            format_func=lambda k: f"{results[k].filename} ({results[k].description})",
+        )
+        if preview_category:
+            st.json(results[preview_category].data, expanded=False)
