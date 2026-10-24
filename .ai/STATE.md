@@ -7,9 +7,15 @@
 ## Completed & Verified Work
 - Git & Environment Setup:
   - Created dedicated development branch `refactor/hypixel-api-v2-compliance`.
-  - Configured `.gitignore` to exclude `.env`, `api_key.txt`, virtual environments, test caches, and extraction folders (`SkyBlock_*/`).
+  - Configured `.gitignore` to exclude `.env`, `api_key.txt`, virtual environments, test caches, and extraction folders (`/SkyBlock_*/`).
   - Added `requirements.txt`, `requirements-dev.txt`, and `pyproject.toml`.
   - Configured `.github/workflows/tests.yml` for continuous testing on Linux and Windows.
+- Repository Tree Refactoring:
+  - Adopted modern `src/` layout: core Python package placed in `src/skyblock_extractor/`.
+  - Isolated static assets into `assets/` (`assets/logo.png`, `assets/Screenshot.png`).
+  - Isolated secondary documentation into `docs/` (`docs/API_USAGE.md`, `docs/PERSONAL_API_APPLICATION.md`).
+  - Maintained root backwards-compatible entry points: `app.py` for Streamlit and `extract_profile.py` for Python CLI.
+  - Added console script entry point `skyblock-extractor = skyblock_extractor.cli:main` in `pyproject.toml`.
 - API Security & Architecture Refactor:
   - `api_client.py`: Implemented `HypixelAPIClient` strictly using HTTP header authentication (`API-Key`), automatic credential redaction, and custom domain exceptions (`AuthenticationError`, `RateLimitExceededError`, `PlayerNotFoundError`, `ProfileNotFoundError`, `APIResponseError`, `NetworkTimeoutError`).
   - `profile_service.py`: Implemented robust profile discovery, member normalization supporting both dashed and undashed UUID keys, and sorting by last_save timestamp.
