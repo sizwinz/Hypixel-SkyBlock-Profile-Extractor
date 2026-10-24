@@ -65,3 +65,49 @@ def test_profile_exporter_manifest_and_zip(tmp_path: Path):
         assert "complete_profile.json" in namelist
         assert "profile_summary.json" in namelist
         assert "extraction_manifest.json" in namelist
+
+
+def test_profile_exporter_exports_fallback_data_with_provenance(tmp_path: Path):
+    results = {
+        "profile": ExtractionResult(
+            category="profile",
+            filename="complete_profile.json",
+            description="Complete Profile Data",
+            status="fallback",
+            error_message="Fresh profile fetch failed (500 Server Error); fell back to discovery snapshot.",
+            data={"profile_id": "fallback-pid-1", "members": {"test_uuid": {}}},
+            is_fallback=True,
+            source="discovery_snapshot",
+        )
+    }
+
+    exporter = ProfileExporter(
+        username="Technoblade",
+        player_uuid="b876ec32-e396-476b-a115-8438d83c67d4",
+        profile_name="Tomato",
+        profile_id="fallback-pid-1",
+        results=results,
+        base_dir=tmp_path,
+    )
+
+    out_dir = exporter.export_to_directory()
+
+    # The fallback profile JSON must be exported so the user still receives usable data
+    assert (out_dir / "complete_profile.json").exists()
+    exported_data = json.loads((out_dir / "complete_profile.json").read_text(encoding="utf-8"))
+    assert exported_data["profile_id"] == "fallback-pid-1"
+
+    # Manifest must record fallback provenance
+    manifest = json.loads((out_dir / "extraction_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["summary"]["fallback"] == 1
+    assert "complete_profile.json" in manifest["files"]
+    prof_status = manifest["status_details"]["profile"]
+    assert prof_status["status"] == "fallback"
+    assert prof_status["is_fallback"] is True
+    assert prof_status["source"] == "discovery_snapshot"
+
+    # README report must indicate fallback tag
+    readme = (out_dir / "README.txt").read_text(encoding="utf-8")
+    assert "[FALLBACK]" in readme
+    assert "complete_profile.json" in readme
+
