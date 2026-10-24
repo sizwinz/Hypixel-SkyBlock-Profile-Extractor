@@ -114,8 +114,9 @@ class ProfileExtractor:
             "items": {
                 "desc": "SkyBlock Items Schema",
                 "filename": "skyblock_items.json",
-                "endpoint": "skyblock/items",
+                "endpoint": "resources/skyblock/items",
                 "params": {},
+                "require_auth": False,
             },
         }
 
@@ -182,7 +183,11 @@ class ProfileExtractor:
                     continue
 
             try:
-                data = self.client.fetch_endpoint(spec["endpoint"], params=spec["params"])
+                data = self.client.fetch_endpoint(
+                    spec["endpoint"],
+                    params=spec["params"],
+                    require_auth=spec.get("require_auth", True),
+                )
                 results[cat] = ExtractionResult(
                     category=cat,
                     filename=filename,

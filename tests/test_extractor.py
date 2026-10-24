@@ -59,3 +59,35 @@ def test_extractor_resilience_and_progress():
     assert len(progress_events) == 3
     assert progress_events[-1][0] == 3
     assert progress_events[-1][1] == 3
+
+
+@responses.activate
+def test_extractor_items_endpoint_keyless():
+    client = HypixelAPIClient(api_key="mock-key-12345678-1234-1234-1234")
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/resources/skyblock/items",
+        json={"success": True, "items": [{"id": "ASPECT_OF_THE_JERRY", "name": "Aspect of the Jerry"}]},
+        status=200,
+    )
+
+    extractor = ProfileExtractor(client=client)
+    selected_profile = {"profile_id": "test-p1"}
+
+    results = extractor.extract(
+        player_uuid="b876ec32-e396-476b-a115-8438d83c67d4",
+        profile=selected_profile,
+        categories=["items"],
+    )
+
+    assert "items" in results
+    assert results["items"].status == "success"
+    assert results["items"].filename == "skyblock_items.json"
+    assert results["items"].data["items"][0]["id"] == "ASPECT_OF_THE_JERRY"
+
+    # Verify that the HTTP request was made to resources/skyblock/items without API-Key header
+    assert len(responses.calls) == 1
+    call = responses.calls[0]
+    assert call.request.url == "https://api.hypixel.net/v2/resources/skyblock/items"
+    assert "API-Key" not in call.request.headers
+
