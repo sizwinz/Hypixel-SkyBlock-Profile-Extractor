@@ -64,24 +64,39 @@ class ProfileAnalyzer:
         tracked_count = 0
 
         player_data = member.get("player_data", {})
-        experience_dict = player_data.get("experience", {})
+        experience_dict = player_data.get("experience", {}) if isinstance(player_data, dict) else {}
 
+        has_any_skills = False
         for skill in self.SKILLS_TO_TRACK:
-            xp = (
-                member.get(f"experience_skill_{skill}")
-                or experience_dict.get(f"SKILL_{skill.upper()}", 0)
-                or 0
-            )
-            level = calculate_level(float(xp), SKILL_XP_THRESHOLDS)
-            skills_summary[skill] = {
-                "xp": float(xp),
-                "level": level,
-            }
-            if skill in ["combat", "mining", "farming", "foraging", "fishing", "enchanting", "alchemy", "taming"]:
-                total_level += level
-                tracked_count += 1
+            skill_upper = f"SKILL_{skill.upper()}"
+            old_skill_key = f"experience_skill_{skill}"
 
-        skill_average = round(total_level / max(tracked_count, 1), 2)
+            if old_skill_key in member:
+                raw_xp = member[old_skill_key]
+            elif isinstance(experience_dict, dict) and skill_upper in experience_dict:
+                raw_xp = experience_dict[skill_upper]
+            else:
+                raw_xp = None
+
+            if raw_xp is not None:
+                has_any_skills = True
+                level = calculate_level(float(raw_xp), SKILL_XP_THRESHOLDS)
+                skills_summary[skill] = {
+                    "xp": float(raw_xp),
+                    "level": level,
+                    "available": True,
+                }
+                if skill in ["combat", "mining", "farming", "foraging", "fishing", "enchanting", "alchemy", "taming"]:
+                    total_level += level
+                    tracked_count += 1
+            else:
+                skills_summary[skill] = {
+                    "xp": None,
+                    "level": None,
+                    "available": False,
+                }
+
+        skill_average = round(total_level / tracked_count, 2) if tracked_count > 0 else None
 
         # 3. Slayers
         slayer_data = member.get("slayer", {}).get("slayer_bosses", {})
@@ -125,16 +140,19 @@ class ProfileAnalyzer:
         }
 
         # 7. Privacy & Missing APIs
+        skills_disabled = bool(member) and not has_any_skills
         api_privacy: Dict[str, bool] = {
-            "skills_api_disabled": total_level == 0 and bool(member),
-            "inventory_api_disabled": "inv_contents" not in member and "inventory" not in member,
+            "skills_api_disabled": skills_disabled,
+            "inventory_api_disabled": bool(member) and ("inv_contents" not in member and "inventory" not in member),
             "banking_api_disabled": "banking" not in profile_data,
         }
 
         # 8. Progression Priorities (Rule-Based & Explainable)
         priorities: List[str] = []
-        if skill_average < 25:
+        if skill_average is not None and skill_average < 25:
             priorities.append("Skill Average Foundation: Raise non-combat skills (Farming, Mining, Enchanting) to reach Skill Average 25.")
+        elif skill_average is None and skills_disabled:
+            priorities.append("API Privacy: Enable Skills and Inventory API in Hypixel SkyBlock settings to view skill progression.")
         if cata_level < 14:
             priorities.append("Catacombs Entry: Progress through Catacombs Floors 1-5 to unlock essential mid-game dungeon gear.")
         if slayer_summary.get("wolf", {}).get("level", 0) < 6:
