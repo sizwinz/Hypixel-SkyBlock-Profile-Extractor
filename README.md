@@ -71,8 +71,9 @@ python -m venv .venv
 # Linux/macOS:
 source .venv/bin/activate
 
-# Install production dependencies
+# Install dependencies and local package
 pip install -r requirements.txt
+pip install -e .
 
 # (Optional) Install development and testing dependencies
 pip install -r requirements-dev.txt

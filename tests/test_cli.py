@@ -84,3 +84,21 @@ def test_extract_data_uses_fresh_extracted_profile_for_analysis(monkeypatch, tmp
     assert analyzed_profile_data.get("fresh_marker") is True
     assert "stale_marker" not in analyzed_profile_data
 
+
+def test_entry_points_include_src_in_sys_path():
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parent.parent
+    cmd = [
+        sys.executable,
+        "-c",
+        "import sys, pathlib; p = str(pathlib.Path('src').resolve()); sys.path = [x for x in sys.path if x != p]; assert p not in sys.path; import extract_profile; assert p in sys.path",
+    ]
+    result = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
+    assert result.returncode == 0, f"Subprocess failed:\n{result.stderr}"
+
+
+
+
