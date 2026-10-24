@@ -63,3 +63,23 @@ def test_get_player_uuid_success():
     dashed_uuid, raw_uuid = client.get_player_uuid("Technoblade")
     assert raw_uuid == "b876ec32e396476ba1158438d83c67d4"
     assert dashed_uuid == "b876ec32-e396-476b-a115-8438d83c67d4"
+
+
+@responses.activate
+def test_get_player_uuid_errors():
+    from api_client import HypixelAPIClient, PlayerNotFoundError
+
+    client = HypixelAPIClient()
+
+    # Invalid username format
+    with pytest.raises(PlayerNotFoundError, match="Invalid Minecraft username"):
+        client.get_player_uuid("Invalid Name With Spaces!")
+
+    # 404 Not Found from Mojang
+    responses.add(
+        responses.GET,
+        "https://api.mojang.com/users/profiles/minecraft/GhostUser99999",
+        status=404,
+    )
+    with pytest.raises(PlayerNotFoundError, match="does not exist"):
+        client.get_player_uuid("GhostUser99999")
