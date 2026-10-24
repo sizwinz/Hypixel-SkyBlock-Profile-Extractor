@@ -1,4 +1,31 @@
+# Credentials & Secrets
 api_key.txt
+.env
+*.env
+
+# Python & Virtual Environments
 __pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Test & Coverage Artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Extracted Data & Archives
+/SkyBlock_*/
 *.zip
-*.json
+
+# OS Artifacts
+.DS_Store
+Thumbs.db
+
+# Agent Planning & Local State
+.planning/
+.ai/
+scratch/

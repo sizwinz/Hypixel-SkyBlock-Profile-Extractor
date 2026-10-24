@@ -1,0 +1,158 @@
+import pytest
+from skyblock_extractor.analysis import ProfileAnalyzer
+
+def test_profile_analyzer_progression_and_disclaimer():
+
+    player_uuid = "b876ec32-e396-476b-a115-8438d83c67d4"
+    profile_data = {
+        "profile_id": "test-prof-123",
+        "cute_name": "Tomato",
+        "game_mode": "ironman",
+        "members": {
+            "b876ec32e396476ba1158438d83c67d4": {
+                "experience_skill_combat": 600000,   # Level ~24
+                "experience_skill_mining": 1200000,  # Level ~27
+                "slayer": {
+                    "slayer_bosses": {
+                        "zombie": {"xp": 50000},
+                        "spider": {"xp": 10000},
+                        "wolf": {"xp": 1500},
+                    }
+                },
+                "dungeons": {
+                    "dungeon_types": {
+                        "catacombs": {
+                            "experience": 250000,
+                        }
+                    },
+                    "selected_dungeon_class": "mage",
+                },
+            }
+        },
+    }
+
+    auxiliary_data = {
+        "garden": {
+            "garden": {
+                "level": 9,
+                "completed_visitors": 45,
+            }
+        }
+    }
+
+    analyzer = ProfileAnalyzer()
+    summary = analyzer.analyze(
+        player_uuid=player_uuid,
+        profile_data=profile_data,
+        auxiliary_data=auxiliary_data,
+    )
+
+    # Core profile info
+    assert summary["profile_name"] == "Tomato"
+    assert summary["game_mode"] == "ironman"
+
+    # Skills analysis
+    assert "combat" in summary["skills"]
+    assert summary["skills"]["combat"]["level"] == 20
+    assert summary["skill_average"] > 0
+
+    # Slayers
+    assert summary["slayer"]["zombie"]["xp"] == 50000
+
+    # Dungeons
+    assert summary["dungeons"]["class"] == "mage"
+    assert summary["dungeons"]["catacombs_level"] > 10
+
+    # Priorities & Disclaimers
+    assert len(summary["progression_priorities"]) >= 1
+    assert "Bazaar prices" in summary["disclaimers"]["net_worth"]
+    assert "in-game API privacy" in summary["disclaimers"]["api_privacy"]
+
+
+def test_profile_analyzer_missing_data_and_privacy():
+    player_uuid = "b876ec32-e396-476b-a115-8438d83c67d4"
+    analyzer = ProfileAnalyzer()
+
+    # Case 1: Partial skills available (e.g. combat and mining only)
+    profile_partial = {
+        "cute_name": "Peach",
+        "members": {
+            "b876ec32e396476ba1158438d83c67d4": {
+                "player_data": {
+                    "experience": {
+                        "SKILL_COMBAT": 600000,   # Level 20
+                        "SKILL_MINING": 1200000,  # Level 27
+                    }
+                }
+            }
+        }
+    }
+
+    summary_partial = analyzer.analyze(player_uuid=player_uuid, profile_data=profile_partial)
+    assert summary_partial["skills"]["combat"]["level"] == 20
+    assert summary_partial["skills"]["combat"]["available"] is True
+    assert summary_partial["skills"]["farming"]["level"] is None
+    assert summary_partial["skills"]["farming"]["available"] is False
+    # Skill average should ONLY average the 2 available skills: (20 + 21) / 2 = 20.5
+    assert summary_partial["skill_average"] == 20.5
+    assert summary_partial["api_privacy"]["skills_api_disabled"] is False
+
+    # Case 2: Skills API completely absent
+    profile_disabled = {
+        "cute_name": "Peach",
+        "members": {
+            "b876ec32e396476ba1158438d83c67d4": {
+                "player_data": {}
+            }
+        }
+    }
+    summary_disabled = analyzer.analyze(player_uuid=player_uuid, profile_data=profile_disabled)
+    assert summary_disabled["skill_average"] is None
+    assert summary_disabled["api_privacy"]["skills_api_disabled"] is True
+
+
+def test_profile_analyzer_unavailable_dungeons_slayer_garden_no_spurious_recommendations():
+    player_uuid = "b876ec32-e396-476b-a115-8438d83c67d4"
+    analyzer = ProfileAnalyzer()
+
+    # Profile with high skills but completely missing dungeons, slayer, and garden data
+    profile_no_aux = {
+        "cute_name": "Mango",
+        "members": {
+            "b876ec32e396476ba1158438d83c67d4": {
+                "player_data": {
+                    "experience": {
+                        "SKILL_COMBAT": 50000000,
+                        "SKILL_MINING": 50000000,
+                        "SKILL_FARMING": 50000000,
+                        "SKILL_FORAGING": 50000000,
+                        "SKILL_FISHING": 50000000,
+                        "SKILL_ENCHANTING": 50000000,
+                        "SKILL_ALCHEMY": 50000000,
+                        "SKILL_TAMING": 50000000,
+                    }
+                }
+            }
+        }
+    }
+
+    summary = analyzer.analyze(player_uuid=player_uuid, profile_data=profile_no_aux, auxiliary_data={})
+
+    # Dungeons should be marked unavailable with None level
+    assert summary["dungeons"]["available"] is False
+    assert summary["dungeons"]["catacombs_level"] is None
+
+    # Slayer should be marked unavailable
+    assert summary["slayer"]["available"] is False
+
+    # Garden should be marked unavailable with None level
+    assert summary["garden"]["available"] is False
+    assert summary["garden"]["level"] is None
+
+    # Recommendations should NOT include spurious beginner tasks for missing datasets
+    priorities_text = " ".join(summary["progression_priorities"])
+    assert "Catacombs Entry" not in priorities_text
+    assert "Slayer Utility" not in priorities_text
+    assert "Garden Initialization" not in priorities_text
+
+
