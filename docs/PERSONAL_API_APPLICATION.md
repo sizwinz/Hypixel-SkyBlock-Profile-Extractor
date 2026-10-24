@@ -37,7 +37,7 @@ All requests use the official Hypixel API v2 (`https://api.hypixel.net/v2`) with
 - `v2/guild`: Used to display guild membership information.
 - `v2/skyblock/bazaar` & `v2/skyblock/auction`: Used to capture market pricing context for inventory review.
 - `v2/skyblock/news` & `v2/skyblock/firesales`: Used to inspect community event and update logs.
-- `v2/resources/skyblock/items`: Keyless public resource endpoint used to map official item schema and registry definitions.
+- `v2/resources/skyblock/items`, `v2/resources/skyblock/skills`, `v2/resources/skyblock/collections`: Keyless public resource endpoints used to map official item schemas, skill milestones, and collection definitions without authenticating.
 
 ---
 

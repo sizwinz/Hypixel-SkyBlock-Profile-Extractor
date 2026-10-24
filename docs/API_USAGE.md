@@ -44,6 +44,8 @@ All Hypixel requests target the official v2 base path: `https://api.hypixel.net/
 | `skyblock/auction` | GET | `API-Key` Header | `profile=<profile_id>` | Active auction listings for target profile |
 | `skyblock/news` | GET | `API-Key` Header | None | In-game announcements and update logs |
 | `resources/skyblock/items` | GET | None (Public Keyless) | None | Official SkyBlock item schema and registry definitions |
+| `resources/skyblock/skills` | GET | None (Public Keyless) | None | Official SkyBlock skill level thresholds and descriptions |
+| `resources/skyblock/collections` | GET | None (Public Keyless) | None | Official SkyBlock collection categories and tier thresholds |
 
 ---
 

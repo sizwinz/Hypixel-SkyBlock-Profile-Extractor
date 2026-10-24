@@ -306,6 +306,9 @@ if st.session_state.profiles:
         chk_auction = st.checkbox("Active Profile Auctions", value=True)
         chk_news = st.checkbox("SkyBlock In-game News", value=False)
         chk_firesales = st.checkbox("Active Fire Sales", value=False)
+        chk_items = st.checkbox("Items Schema (Public Resource)", value=True)
+        chk_skills_res = st.checkbox("Skills Schema (Public Resource)", value=False)
+        chk_colls_res = st.checkbox("Collections Schema (Public Resource)", value=False)
 
     selected_categories = ["profile"]
     if chk_player: selected_categories.append("player")
@@ -316,6 +319,9 @@ if st.session_state.profiles:
     if chk_auction: selected_categories.append("auction")
     if chk_news: selected_categories.append("news")
     if chk_firesales: selected_categories.append("firesales")
+    if chk_items: selected_categories.append("items")
+    if chk_skills_res: selected_categories.append("skills_resource")
+    if chk_colls_res: selected_categories.append("collections_resource")
 
     # STEP 4: EXTRACTION TRIGGER
     st.markdown("<br>", unsafe_allow_html=True)

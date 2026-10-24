@@ -120,6 +120,20 @@ class ProfileExtractor:
                 "params": {},
                 "require_auth": False,
             },
+            "skills_resource": {
+                "desc": "SkyBlock Skills Resource Schema",
+                "filename": "skyblock_skills_resource.json",
+                "endpoint": "resources/skyblock/skills",
+                "params": {},
+                "require_auth": False,
+            },
+            "collections_resource": {
+                "desc": "SkyBlock Collections Resource Schema",
+                "filename": "skyblock_collections_resource.json",
+                "endpoint": "resources/skyblock/collections",
+                "params": {},
+                "require_auth": False,
+            },
         }
 
     def extract(
