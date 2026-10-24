@@ -1,5 +1,6 @@
 """Hypixel and Mojang API client with security compliance and rate limit handling."""
 
+import os
 import random
 import re
 import time
@@ -19,6 +20,21 @@ DEFAULT_CACHE_TTLS: Dict[str, float] = {
     "skyblock/news": 300.0,
     "skyblock/firesales": 300.0,
 }
+
+
+def is_hosted_environment() -> bool:
+    """Check if the application is running in a multi-user, server, or cloud hosted context."""
+    return bool(
+        os.environ.get("STREAMLIT_HOSTED")
+        or os.environ.get("SERVER_NAME")
+        or os.environ.get("HYPIXEL_API_KEY")
+        or os.environ.get("MULTI_USER", "").lower() in ("1", "true")
+    )
+
+
+def can_persist_key_to_disk() -> bool:
+    """Determine whether persisting API keys to local disk is permitted."""
+    return not is_hosted_environment()
 
 
 class SkyBlockExtractorError(Exception):
