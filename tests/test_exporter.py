@@ -111,3 +111,48 @@ def test_profile_exporter_exports_fallback_data_with_provenance(tmp_path: Path):
     assert "[FALLBACK]" in readme
     assert "complete_profile.json" in readme
 
+
+def test_public_resource_exporter_bundle_and_zip(tmp_path: Path):
+    from skyblock_extractor.exporter import PublicResourceExporter
+
+    results = {
+        "items": ExtractionResult(
+            category="items",
+            filename="skyblock_items.json",
+            description="SkyBlock Items Schema",
+            status="success",
+            data={"success": True, "items": [{"id": "HYPERION"}]},
+        ),
+        "skills_resource": ExtractionResult(
+            category="skills_resource",
+            filename="skyblock_skills_resource.json",
+            description="SkyBlock Skills Resource Schema",
+            status="success",
+            data={"success": True, "skills": {}},
+        ),
+    }
+
+    exporter = PublicResourceExporter(results=results, base_dir=tmp_path)
+    out_dir = exporter.export_to_directory()
+
+    assert (out_dir / "skyblock_items.json").exists()
+    assert (out_dir / "skyblock_skills_resource.json").exists()
+    assert (out_dir / "extraction_manifest.json").exists()
+    assert (out_dir / "README.txt").exists()
+
+    manifest = json.loads((out_dir / "extraction_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["resource_type"] == "public_game_resources"
+    assert manifest["summary"]["successful"] == 2
+    assert "skyblock_items.json" in manifest["files"]
+
+    readme = (out_dir / "README.txt").read_text(encoding="utf-8")
+    assert "PUBLIC GAME RESOURCES REPORT" in readme
+
+    zip_buf = exporter.build_zip_in_memory()
+    with zipfile.ZipFile(zip_buf) as zf:
+        namelist = zf.namelist()
+        assert "skyblock_items.json" in namelist
+        assert "skyblock_skills_resource.json" in namelist
+        assert "extraction_manifest.json" in namelist
+
+
