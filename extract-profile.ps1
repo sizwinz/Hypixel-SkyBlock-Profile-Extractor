@@ -83,7 +83,8 @@ function Invoke-HypixelApiCall {
     param(
         [string]$Endpoint,
         [string]$ErrorContext = "API call",
-        [int]$RetryCount = 3
+        [int]$RetryCount = 3,
+        [switch]$NoAuth
     )
     
     $attempt = 0
@@ -91,9 +92,11 @@ function Invoke-HypixelApiCall {
         try {
             $url = "$Script:HypixelBaseUrl/$Endpoint"
             $headers = @{
-                'API-Key'    = $Script:HypixelApiKey
                 'User-Agent' = $Script:UserAgent
                 'Accept'     = 'application/json'
+            }
+            if (-not $NoAuth) {
+                $headers['API-Key'] = $Script:HypixelApiKey
             }
             
             $response = Invoke-RestMethod -Uri $url -Method Get -Headers $headers -TimeoutSec 30
@@ -277,12 +280,17 @@ function Start-DataExtraction {
         @{ Ep = "skyblock/bingo?uuid=$RawUUID"; File = "bingo_data.json"; Desc = "Bingo Data" },
         @{ Ep = "skyblock/bazaar"; File = "bazaar_prices.json"; Desc = "Bazaar Prices" },
         @{ Ep = "skyblock/auction?profile=$($ProfileData.profile_id)"; File = "active_auctions.json"; Desc = "Active Auctions" },
-        @{ Ep = "skyblock/news"; File = "skyblock_news.json"; Desc = "SkyBlock News" }
+        @{ Ep = "skyblock/news"; File = "skyblock_news.json"; Desc = "SkyBlock News" },
+        @{ Ep = "resources/skyblock/items"; File = "skyblock_items.json"; Desc = "Items Schema"; NoAuth = $true }
     )
     
     foreach ($item in $endpoints) {
         try {
-            $data = Invoke-HypixelApiCall -Endpoint $item.Ep -ErrorContext $item.Desc
+            if ($item.NoAuth) {
+                $data = Invoke-HypixelApiCall -Endpoint $item.Ep -ErrorContext $item.Desc -NoAuth
+            } else {
+                $data = Invoke-HypixelApiCall -Endpoint $item.Ep -ErrorContext $item.Desc
+            }
             $path = Join-Path $OutputDir $item.File
             $data | ConvertTo-Json -Depth 100 -Compress:$false | Out-File -FilePath $path -Encoding UTF8
             Write-Success "Saved $($item.File)"
