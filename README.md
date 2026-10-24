@@ -1,11 +1,19 @@
 # SkyBlock Profile Extractor
 
+<p align="center">
+  <img src="assets/logo.png" alt="SkyBlock Profile Extractor Logo" width="160"/>
+</p>
+
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Hypixel API v2](https://img.shields.io/badge/Hypixel%20API-v2%20Compliant-green.svg)](https://developer.hypixel.net/)
 [![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)](#automated-testing)
 
 An open-source, on-demand data extraction utility and progression analyzer for Hypixel SkyBlock. Designed for personal character backups, progression tracking, and structured dataset export via the official Hypixel API v2.
+
+<p align="center">
+  <img src="assets/Screenshot.png" alt="Application Screenshot" width="800"/>
+</p>
 
 ---
 
@@ -138,7 +146,49 @@ For environments without Python installed:
 - **Automatic Redaction**: `api_client.py` strips API keys from exception messages, representation strings, and logs.
 - **No Continuous Tracking**: Extractions are initiated solely on demand by user command. The project maintains no background monitoring services.
 
-For detailed policy documentation, refer to [API_USAGE.md](API_USAGE.md).
+For detailed policy documentation, refer to [docs/API_USAGE.md](docs/API_USAGE.md).
+
+---
+
+## Project Repository Structure
+
+```text
+Hypixel-SkyBlock-Profile-Extractor/
+├── .github/
+│   └── workflows/
+│       └── tests.yml          # Automated CI testing matrix
+├── assets/                    # Project visual branding and screenshots
+│   ├── logo.png
+│   └── Screenshot.png
+├── docs/                      # Architectural and compliance documentation
+│   ├── API_USAGE.md           # API v2 specifications and policy matrix
+│   └── PERSONAL_API_APPLICATION.md # Dashboard application template
+├── src/
+│   └── skyblock_extractor/    # Core Python library
+│       ├── __init__.py        # Package exports and versioning
+│       ├── api_client.py      # Requests HTTP client, header auth, backoff
+│       ├── profile_service.py # Player UUID and profile discovery
+│       ├── extractor.py       # Resilient multi-endpoint orchestrator
+│       ├── analysis.py        # Deterministic progression analytics
+│       ├── exporter.py        # JSON serialization, SHA-256 manifests, ZIP
+│       └── cli.py             # CLI command logic
+├── tests/                     # Automated unit and integration test suite
+│   ├── test_analysis.py
+│   ├── test_api_client.py
+│   ├── test_cli.py
+│   ├── test_exporter.py
+│   ├── test_extractor.py
+│   └── test_profile_service.py
+├── app.py                     # Streamlit web application entry point
+├── extract_profile.py         # Standalone CLI entry wrapper
+├── extract-profile.ps1        # Standalone Windows PowerShell utility
+├── pyproject.toml             # Package metadata, scripts, pytest config
+├── requirements.txt           # Core production dependencies
+├── requirements-dev.txt       # Development and testing dependencies
+├── CONTRIBUTING.md            # Guidelines for open source contributors
+├── LICENSE                    # MIT License
+└── README.md                  # Project overview and documentation
+```
 
 ---
 

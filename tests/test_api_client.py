@@ -1,17 +1,18 @@
 import pytest
 import responses
 
-def test_custom_exception_hierarchy():
-    from api_client import (
-        SkyBlockExtractorError,
-        AuthenticationError,
-        RateLimitExceededError,
-        PlayerNotFoundError,
-        ProfileNotFoundError,
-        APIResponseError,
-        NetworkTimeoutError,
-    )
+from skyblock_extractor.api_client import (
+    SkyBlockExtractorError,
+    AuthenticationError,
+    RateLimitExceededError,
+    PlayerNotFoundError,
+    ProfileNotFoundError,
+    APIResponseError,
+    NetworkTimeoutError,
+    HypixelAPIClient,
+)
 
+def test_custom_exception_hierarchy():
     assert issubclass(AuthenticationError, SkyBlockExtractorError)
     assert issubclass(RateLimitExceededError, SkyBlockExtractorError)
     assert issubclass(PlayerNotFoundError, SkyBlockExtractorError)
@@ -21,8 +22,6 @@ def test_custom_exception_hierarchy():
 
 
 def test_api_key_redaction():
-    from api_client import HypixelAPIClient
-
     raw_key = "12345678-1234-1234-1234-123456789abc"
     client = HypixelAPIClient(api_key=raw_key)
 
@@ -35,8 +34,6 @@ def test_api_key_redaction():
 
 
 def test_client_repr_safe():
-    from api_client import HypixelAPIClient
-
     raw_key = "12345678-1234-1234-1234-123456789abc"
     client = HypixelAPIClient(api_key=raw_key)
 
@@ -50,8 +47,6 @@ def test_client_repr_safe():
 
 @responses.activate
 def test_get_player_uuid_success():
-    from api_client import HypixelAPIClient
-
     client = HypixelAPIClient()
     responses.add(
         responses.GET,
@@ -67,8 +62,6 @@ def test_get_player_uuid_success():
 
 @responses.activate
 def test_get_player_uuid_errors():
-    from api_client import HypixelAPIClient, PlayerNotFoundError
-
     client = HypixelAPIClient()
 
     # Invalid username format
@@ -87,8 +80,6 @@ def test_get_player_uuid_errors():
 
 @responses.activate
 def test_fetch_endpoint_header_auth():
-    from api_client import HypixelAPIClient
-
     test_key = "12345678-1234-1234-1234-123456789abc"
     client = HypixelAPIClient(api_key=test_key)
 
@@ -111,13 +102,6 @@ def test_fetch_endpoint_header_auth():
 
 @responses.activate
 def test_fetch_endpoint_errors():
-    from api_client import (
-        HypixelAPIClient,
-        AuthenticationError,
-        RateLimitExceededError,
-        APIResponseError,
-    )
-
     client = HypixelAPIClient(api_key="bad-key-12345678-1234-1234-1234")
 
     # 403 Forbidden
@@ -152,8 +136,6 @@ def test_fetch_endpoint_errors():
 
 @responses.activate
 def test_get_skyblock_profiles_and_profile():
-    from api_client import HypixelAPIClient
-
     client = HypixelAPIClient(api_key="valid-key-12345678-1234-1234-1234")
 
     # Mock /v2/skyblock/profiles?uuid=...
@@ -193,8 +175,6 @@ def test_get_skyblock_profiles_and_profile():
 @responses.activate
 def test_fetch_endpoint_500_and_timeout():
     import requests
-    from api_client import HypixelAPIClient, SkyBlockExtractorError, NetworkTimeoutError
-
     client = HypixelAPIClient(api_key="valid-key-12345678-1234-1234-1234")
 
     # 500 Internal Server Error

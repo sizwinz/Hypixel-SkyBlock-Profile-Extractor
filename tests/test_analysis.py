@@ -1,7 +1,7 @@
 import pytest
+from skyblock_extractor.analysis import ProfileAnalyzer
 
 def test_profile_analyzer_progression_and_disclaimer():
-    from analysis import ProfileAnalyzer
 
     player_uuid = "b876ec32-e396-476b-a115-8438d83c67d4"
     profile_data = {

@@ -4,7 +4,7 @@ from pathlib import Path
 
 def test_cli_helpers_raise_exceptions_without_sys_exit():
     import extract_profile
-    from api_client import PlayerNotFoundError
+    from skyblock_extractor.api_client import PlayerNotFoundError
 
     # Mojang 404 should raise PlayerNotFoundError, NOT call sys.exit
     with responses.RequestsMock() as rsps:

@@ -19,7 +19,13 @@ dev = [
     "responses>=0.23.0",
 ]
 
+[project.scripts]
+skyblock-extractor = "skyblock_extractor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-pythonpath = ["."]
+pythonpath = ["src", "."]

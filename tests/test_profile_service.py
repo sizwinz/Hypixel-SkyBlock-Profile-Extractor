@@ -1,7 +1,8 @@
 import pytest
+from skyblock_extractor.profile_service import normalize_profiles, select_profile
+from skyblock_extractor.api_client import ProfileNotFoundError
 
 def test_normalize_profiles_dashed_and_undashed_uuid():
-    from profile_service import normalize_profiles
 
     raw_profiles = [
         {
@@ -55,9 +56,6 @@ def test_normalize_profiles_dashed_and_undashed_uuid():
 
 
 def test_select_profile_silent_and_by_name():
-    from profile_service import select_profile
-    from api_client import ProfileNotFoundError
-
     profiles = [
         {"profile_id": "1", "name": "Apple", "last_save": 500},
         {"profile_id": "2", "name": "Banana", "last_save": 200},
@@ -77,8 +75,6 @@ def test_select_profile_silent_and_by_name():
 
 
 def test_empty_profiles_and_missing_fields():
-    from profile_service import normalize_profiles
-
     # Profiles with missing or corrupt fields
     raw = [
         None,

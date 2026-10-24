@@ -1,7 +1,7 @@
 """Service for SkyBlock profile discovery, member normalization, and selection."""
 
 from typing import Any, Dict, List, Optional
-from api_client import HypixelAPIClient, ProfileNotFoundError
+from skyblock_extractor.api_client import HypixelAPIClient, ProfileNotFoundError
 
 
 def get_member_data(members: Dict[str, Any], player_uuid: str) -> Dict[str, Any]:
