@@ -39,90 +39,121 @@ APP_VERSION = "2.1.0"
 # --- PAGE SETUP ---
 st.set_page_config(
     page_title="SkyBlock Profile Extractor",
-    page_icon='assets/logo.png',
+    page_icon="assets/logo.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# --- REFINED PROFESSIONAL STYLING ---
-st.markdown("""
+st.logo("assets/logo.png", size="medium")
+
+# --- MINIMALIST AESTHETIC STYLING (ZERO GLOW) ---
+st.html("""
 <style>
-    /* Executive typography & restrained contrast */
-    .stApp {
-        background-color: #0d1117;
-        color: #c9d1d9;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    /* Absolute Zero Glow Invariant */
+    *, *::before, *::after {
+        box-shadow: none !important;
+        text-shadow: none !important;
+        filter: none !important;
     }
-    
-    /* Headers */
-    h1, h2, h3, h4 {
-        color: #f0f6fc;
-        font-weight: 600;
+
+    /* Base page styling */
+    .stApp {
+        background-color: #09090b;
+        color: #f4f4f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* Clean Headings */
+    h1, h2, h3, h4, h5, h6 {
+        color: #fafafa !important;
+        font-weight: 600 !important;
         letter-spacing: -0.02em;
     }
-    
-    /* Clean Cards */
-    .metric-card {
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 12px;
+
+    /* Clean Card Containers */
+    div[data-testid="stVerticalBlockBorderWrapper"] > div {
+        border-color: #27272a !important;
+        border-radius: 8px !important;
+        background-color: #111114 !important;
     }
-    
-    .metric-val {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: #58a6ff;
+
+    /* Minimal Native Metrics */
+    div[data-testid="stMetric"] {
+        padding: 4px 0;
     }
-    
-    .metric-label {
-        font-size: 0.85rem;
-        color: #8b949e;
+    div[data-testid="stMetricValue"] {
+        font-size: 1.55rem !important;
+        font-weight: 600 !important;
+        color: #38bdf8 !important;
+        letter-spacing: -0.02em;
+    }
+    div[data-testid="stMetricLabel"] {
+        font-size: 0.78rem !important;
+        font-weight: 500 !important;
+        color: #a1a1aa !important;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
-    
-    /* Badge Pills */
-    .badge-ok {
-        background-color: rgba(46, 160, 67, 0.15);
-        color: #3fb950;
-        border: 1px solid rgba(46, 160, 67, 0.4);
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
+
+    /* Restrained Buttons - Clean, Crisp, Flat */
+    .stButton > button {
+        border-radius: 6px !important;
+        font-weight: 500 !important;
+        border: 1px solid #3f3f46 !important;
+        background-color: #18181b !important;
+        color: #f4f4f5 !important;
+        transition: background-color 0.12s ease, border-color 0.12s ease !important;
     }
-    
-    .badge-fail {
-        background-color: rgba(248, 81, 73, 0.15);
-        color: #f85149;
-        border: 1px solid rgba(248, 81, 73, 0.4);
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
+    .stButton > button:hover {
+        border-color: #71717a !important;
+        background-color: #27272a !important;
     }
-    
-    .badge-mode {
-        background-color: rgba(88, 166, 255, 0.15);
-        color: #58a6ff;
-        border: 1px solid rgba(88, 166, 255, 0.3);
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
+    .stButton > button[kind="primary"] {
+        background-color: #2563eb !important;
+        border-color: #2563eb !important;
+        color: #ffffff !important;
+    }
+    .stButton > button[kind="primary"]:hover {
+        background-color: #1d4ed8 !important;
+        border-color: #1d4ed8 !important;
     }
 
-    /* Subdued Buttons */
-    .stButton > button {
+    /* Clean Modern Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px;
+        border-bottom: 1px solid #27272a;
+        padding-bottom: 4px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 38px;
         border-radius: 6px;
+        padding: 0 16px;
         font-weight: 500;
-        transition: all 0.2s ease;
+        font-size: 0.88rem;
+        color: #a1a1aa;
+        border: 1px solid transparent;
+        background: transparent;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #fafafa !important;
+        background: #18181b !important;
+        border-color: #3f3f46 !important;
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+
+    /* Clean Inputs */
+    input, textarea, select {
+        border-radius: 6px !important;
+    }
+
+    /* Progress Bar */
+    div[data-testid="stProgress"] > div > div > div > div {
+        background-color: #2563eb !important;
     }
 </style>
-""", unsafe_allow_html=True)
-
+""")
 
 # --- STATE INITIALIZATION ---
 if "profiles" not in st.session_state:
@@ -150,12 +181,10 @@ if "public_zip_filename" not in st.session_state:
 if "public_outcome" not in st.session_state:
     st.session_state.public_outcome = None
 
-
 # --- SIDEBAR: AUTHENTICATION & CONFIG ---
 with st.sidebar:
-    st.title("Configuration")
-    
-    # Resolve initial default key without exposing server environment key
+    st.markdown("### Configuration")
+
     hosted_mode = is_hosted_environment()
     allow_storage = can_persist_key_to_disk()
     env_key = os.environ.get("HYPIXEL_API_KEY", "").strip()
@@ -163,73 +192,80 @@ with st.sidebar:
     file_key = ""
 
     if hosted_mode:
-        # In hosted deployments, visitors must never be prompted or permitted to enter personal API keys
         api_key_input = ""
         effective_key = env_key
         if env_key:
-            st.success("Server API Key Active")
+            st.success("Server API key active", icon=":material/check_circle:")
             st.caption("Using server-configured Hypixel API credentials.")
         else:
-            st.info("Hosted Multi-User Deployment")
-            st.caption(
-                "Under Hypixel Developer Policies, personal API keys must not be collected through hosted web forms. "
-                "You can freely extract unauthenticated Public Game Resources (Items, Skills, Collections) in the Public Resources tab, "
-                "or run this tool locally on your own machine to query profiles using a personal API key."
-            )
+            with st.container(border=True):
+                st.markdown("**:material/lock: Hosted Multi-User Mode**")
+                st.caption(
+                    "Under Hypixel Developer Policies, personal API keys must not be collected through hosted web forms. "
+                    "You can freely extract unauthenticated Public Game Resources (Items, Skills, Collections) in the Public Resources tab, "
+                    "or run this tool locally on your own machine to query profiles using a personal API key."
+                )
     else:
-        # Desktop local deployment: user can provide their own personal API key safely
         if allow_storage and key_file.exists():
             try:
                 file_key = key_file.read_text(encoding="utf-8").strip()
             except Exception:
                 pass
 
-        api_key_input = st.text_input(
-            "Hypixel API Key",
-            value=file_key,
-            type="password",
-            help="Personal API Key from developer.hypixel.net. Stored in memory on your local machine.",
-        )
+        with st.container(border=True):
+            st.markdown("**:material/key: Personal API Key**")
+            api_key_input = st.text_input(
+                "Hypixel API Key",
+                value=file_key,
+                type="password",
+                help="Personal API Key from developer.hypixel.net. Stored in memory on your local machine.",
+            )
 
-        effective_key = api_key_input.strip() or env_key
+            effective_key = api_key_input.strip() or env_key
 
-        if allow_storage:
-            save_key = st.checkbox("Persist key locally to api_key.txt", value=bool(file_key))
-            if save_key and api_key_input.strip() and api_key_input.strip() != file_key:
-                try:
-                    key_file.write_text(api_key_input.strip(), encoding="utf-8")
-                    st.toast("API key saved locally.")
-                except Exception as e:
-                    st.error(f"Failed to persist key: {e}")
-            elif not save_key and key_file.exists():
-                try:
-                    key_file.unlink()
-                except Exception:
-                    pass
+            if allow_storage:
+                save_key = st.checkbox("Persist key locally to api_key.txt", value=bool(file_key))
+                if save_key and api_key_input.strip() and api_key_input.strip() != file_key:
+                    try:
+                        key_file.write_text(api_key_input.strip(), encoding="utf-8")
+                        st.toast("API key saved locally.")
+                    except Exception as e:
+                        st.error(f"Failed to persist key: {e}")
+                elif not save_key and key_file.exists():
+                    try:
+                        key_file.unlink()
+                    except Exception:
+                        pass
 
-    st.markdown("---")
+    st.space("small")
     with st.expander("API Security & Policy", expanded=False):
         st.markdown("""
-        **Compliance Checklist:**
+        **:material/verified_user: Compliance Checklist**
         - Requests use HTTP header auth (`API-Key`).
-        - Data is fetched on-demand per user click.
+        - Data is fetched on demand per user action.
         - No continuous polling or player monitoring.
         - Free, open-source personal utility.
         """)
         st.caption("[Hypixel Developer Policies](https://developer.hypixel.net/policies/)")
 
-    st.markdown("---")
+    st.divider()
     st.caption(f"SkyBlock Profile Extractor v{APP_VERSION}")
     st.caption("Not affiliated with or endorsed by Hypixel Inc.")
 
-
 # --- MAIN INTERFACE ---
-st.title("SkyBlock Profile Extractor")
-st.markdown("Export raw Hypixel SkyBlock profile data and deterministic progression analytics for personal analysis.")
+c_title, c_badge = st.columns([4, 1], vertical_alignment="center")
+with c_title:
+    st.title("SkyBlock Profile Extractor")
+    st.markdown("Export raw Hypixel SkyBlock profile data and deterministic progression analytics for personal analysis.")
+with c_badge:
+    if hosted_mode:
+        st.badge("Hosted Mode", icon=":material/cloud:", color="blue")
+    else:
+        st.badge("Local Mode", icon=":material/computer:", color="green")
 
 tab_player, tab_public = st.tabs([
-    "Player Profile Backup",
-    "Public Game Resources",
+    ":material/person: Player Profile Backup",
+    ":material/database: Public Game Resources",
 ])
 
 with tab_player:
@@ -237,19 +273,22 @@ with tab_player:
         st.info(
             "Hosted Multi-User Deployment: In compliance with Hypixel Developer Policies, personal API keys are not collected "
             "through web forms on hosted sites. To back up your private player profiles, please run this application locally on your computer. "
-            "You can extract official unauthenticated public datasets without an API key under the Public Game Resources tab."
+            "You can extract official unauthenticated public datasets without an API key under the Public Game Resources tab.",
+            icon=":material/info:",
         )
 
     # STEP 1: USERNAME INPUT
-    c_input, c_btn = st.columns([3, 1])
-    with c_input:
-        input_username = st.text_input(
-            "Minecraft Username",
-            placeholder="e.g. Technoblade",
-            label_visibility="collapsed",
-        )
-    with c_btn:
-        find_btn = st.button("Find Profiles", use_container_width=True, type="primary")
+    with st.container(border=True):
+        st.markdown("**:material/person_search: Player Lookup**")
+        c_input, c_btn = st.columns([4, 1], vertical_alignment="bottom")
+        with c_input:
+            input_username = st.text_input(
+                "Minecraft Username",
+                placeholder="e.g. Technoblade",
+                label_visibility="visible",
+            )
+        with c_btn:
+            find_btn = st.button("Find Profiles", icon=":material/search:", width="stretch", type="primary")
 
     # Reset downstream state if username changes
     if input_username != st.session_state.last_queried_username:
@@ -260,9 +299,9 @@ with tab_player:
 
     if find_btn:
         if not input_username.strip():
-            st.warning("Please enter a Minecraft username.")
+            st.warning("Please enter a Minecraft username.", icon=":material/warning:")
         elif not effective_key:
-            st.warning("Please provide a Hypixel API key in the sidebar. On hosted deployments, use the Public Game Resources tab or run locally.")
+            st.warning("Please provide a Hypixel API key in the sidebar. On hosted deployments, use the Public Game Resources tab or run locally.", icon=":material/warning:")
         else:
             st.session_state.last_queried_username = input_username.strip()
             client = HypixelAPIClient(api_key=effective_key)
@@ -275,7 +314,7 @@ with tab_player:
 
                     raw_profiles = client.get_skyblock_profiles(dashed_uuid)
                     if not raw_profiles:
-                        st.error("No SkyBlock profiles found for this account.")
+                        st.error("No SkyBlock profiles found for this account.", icon=":material/error:")
                         st.session_state.profiles = None
                     else:
                         normalized = normalize_profiles(raw_profiles, dashed_uuid)
@@ -283,61 +322,67 @@ with tab_player:
                         st.session_state.extraction_results = None
                         st.session_state.summary = None
                         st.session_state.zip_buffer = None
-                        st.success(f"Found {len(normalized)} profile(s) for **{input_username.strip()}**.")
+                        st.success(f"Found {len(normalized)} profile(s) for {input_username.strip()}.", icon=":material/check_circle:")
                 except PlayerNotFoundError as e:
-                    st.error(f"Player resolution error: {e}")
+                    st.error(f"Player resolution error: {e}", icon=":material/error:")
                     st.session_state.profiles = None
                 except AuthenticationError as e:
-                    st.error(f"Authentication error: {e}")
+                    st.error(f"Authentication error: {e}", icon=":material/error:")
                     st.session_state.profiles = None
                 except RateLimitExceededError as e:
-                    st.error(f"Rate limit exceeded: {e}")
+                    st.error(f"Rate limit exceeded: {e}", icon=":material/error:")
                     st.session_state.profiles = None
                 except SkyBlockExtractorError as e:
-                    st.error(f"API Error: {e}")
+                    st.error(f"API Error: {e}", icon=":material/error:")
                     st.session_state.profiles = None
-
 
     # STEP 2 & 3: PROFILE SELECTION & CATEGORY CONFIGURATION
     if st.session_state.profiles:
-        st.divider()
-        st.subheader("Select Profile & Categories")
+        st.space("small")
+        st.markdown("**:material/tune: Profile & Extraction Scope**")
 
-        col_profile, col_categories = st.columns([1, 1])
+        col_profile, col_categories = st.columns(2)
 
         with col_profile:
-            profile_choices = {}
-            for p in st.session_state.profiles:
-                last_save_fmt = (
-                    datetime.fromtimestamp(p["last_save"] / 1000).strftime("%Y-%m-%d %H:%M")
-                    if p["last_save"] > 0
-                    else "Never"
-                )
-                mode_tag = f"[{p['game_mode'].upper()}]" if p["game_mode"] != "normal" else ""
-                label = f"{p['name']} {mode_tag} - Last Save: {last_save_fmt}"
-                profile_choices[label] = p
+            with st.container(border=True, height="stretch"):
+                st.markdown("##### Target Profile")
+                st.caption("Select the SkyBlock profile to analyze and export.")
 
-            selected_label = st.radio(
-                "Target Profile:",
-                options=list(profile_choices.keys()),
-                index=0,
-            )
-            target_profile = profile_choices[selected_label]
+                profile_choices = {}
+                for p in st.session_state.profiles:
+                    last_save_fmt = (
+                        datetime.fromtimestamp(p["last_save"] / 1000).strftime("%Y-%m-%d %H:%M")
+                        if p["last_save"] > 0
+                        else "Never"
+                    )
+                    mode_tag = f"[{p['game_mode'].upper()}]" if p["game_mode"] != "normal" else ""
+                    label = f"{p['name']} {mode_tag} - Last Save: {last_save_fmt}".strip()
+                    profile_choices[label] = p
+
+                selected_label = st.radio(
+                    "Target Profile",
+                    options=list(profile_choices.keys()),
+                    index=0,
+                    label_visibility="collapsed",
+                )
+                target_profile = profile_choices[selected_label]
 
         with col_categories:
-            st.markdown("**Extraction Categories:**")
-            chk_profile = st.checkbox("Complete Profile (Inventories, Skills, Slayers, Dungeons)", value=True, disabled=True)
-            chk_player = st.checkbox("Global Player & Minigame Stats", value=True)
-            chk_garden = st.checkbox("Garden & Farming Data", value=True)
-            chk_museum = st.checkbox("Museum Collection & Appraisals", value=True)
-            chk_guild = st.checkbox("Guild Membership & Experience", value=True)
-            chk_bazaar = st.checkbox("Bazaar Market Snapshot", value=True)
-            chk_auction = st.checkbox("Active Profile Auctions", value=True)
-            chk_news = st.checkbox("SkyBlock In-game News", value=False)
-            chk_firesales = st.checkbox("Active Fire Sales", value=False)
-            chk_items = st.checkbox("Items Schema (Public Resource)", value=True)
-            chk_skills_res = st.checkbox("Skills Schema (Public Resource)", value=False)
-            chk_colls_res = st.checkbox("Collections Schema (Public Resource)", value=False)
+            with st.container(border=True, height="stretch"):
+                st.markdown("##### Datasets")
+                st.caption("Choose which categories to query.")
+                chk_profile = st.checkbox("Complete Profile (Inventories, Skills, Slayers, Dungeons)", value=True, disabled=True)
+                chk_player = st.checkbox("Global Player & Minigame Stats", value=True)
+                chk_garden = st.checkbox("Garden & Farming Data", value=True)
+                chk_museum = st.checkbox("Museum Collection & Appraisals", value=True)
+                chk_guild = st.checkbox("Guild Membership & Experience", value=True)
+                chk_bazaar = st.checkbox("Bazaar Market Snapshot", value=True)
+                chk_auction = st.checkbox("Active Profile Auctions", value=True)
+                chk_news = st.checkbox("SkyBlock In-game News", value=False)
+                chk_firesales = st.checkbox("Active Fire Sales", value=False)
+                chk_items = st.checkbox("Items Schema (Public Resource)", value=True)
+                chk_skills_res = st.checkbox("Skills Schema (Public Resource)", value=False)
+                chk_colls_res = st.checkbox("Collections Schema (Public Resource)", value=False)
 
         selected_categories = ["profile"]
         if chk_player: selected_categories.append("player")
@@ -353,8 +398,8 @@ with tab_player:
         if chk_colls_res: selected_categories.append("collections_resource")
 
         # STEP 4: EXTRACTION TRIGGER
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Start Extraction", type="primary", use_container_width=True):
+        st.space("small")
+        if st.button("Start Extraction", icon=":material/download:", type="primary", width="stretch"):
             client = HypixelAPIClient(api_key=effective_key)
             progress_bar = st.progress(0, text="Initializing extraction pipeline...")
             status_text = st.empty()
@@ -381,7 +426,7 @@ with tab_player:
                     st.session_state.zip_buffer = None
                     st.session_state.zip_filename = None
                     progress_bar.progress(100, text="Extraction failed for all requested endpoints.")
-                    st.error("Extraction failed: None of the requested endpoints succeeded. Please verify API credentials and player privacy settings.")
+                    st.error("Extraction failed: None of the requested endpoints succeeded. Please verify API credentials and player privacy settings.", icon=":material/error:")
                 else:
                     # Prioritize freshly extracted profile data if available
                     fresh_profile_data = None
@@ -419,24 +464,23 @@ with tab_player:
 
                     if outcome["status"] == "complete_success":
                         progress_bar.progress(100, text=f"Extraction completed: All {outcome['total_count']} datasets acquired.")
-                        st.success(f"All {outcome['total_count']} datasets successfully extracted.")
+                        st.success(f"All {outcome['total_count']} datasets successfully extracted.", icon=":material/check_circle:")
                     else:
                         progress_bar.progress(100, text=f"Partial extraction completed: {outcome['success_count']} of {outcome['total_count']} datasets acquired.")
-                        st.warning(f"Partial extraction: {outcome['success_count']} of {outcome['total_count']} datasets acquired. Some endpoints failed.")
-
+                        st.warning(f"Partial extraction: {outcome['success_count']} of {outcome['total_count']} datasets acquired. Some endpoints failed.", icon=":material/warning:")
 
     # STEP 5: RESULTS & DOWNLOADS
     if st.session_state.extraction_results:
-        st.divider()
-        st.subheader("Extraction Summary & Analytics")
+        st.space("medium")
+        st.markdown("**:material/analytics: Extraction Summary & Analytics**")
 
         results = st.session_state.extraction_results
         outcome = st.session_state.get("extraction_outcome", classify_extraction_outcome(results))
         summary = st.session_state.summary
 
         if outcome["status"] == "complete_failure":
-            st.error("No datasets could be extracted. Review endpoint diagnostics below.")
-            tab_endpoints, = st.tabs(["Endpoint Status & Diagnostics"])
+            st.error("No datasets could be extracted. Review endpoint diagnostics below.", icon=":material/error:")
+            tab_endpoints, = st.tabs([":material/network_check: Endpoint Status & Diagnostics"])
             with tab_endpoints:
                 status_rows = []
                 for cat, r in results.items():
@@ -448,64 +492,67 @@ with tab_player:
                     })
                 st.table(status_rows)
         elif summary:
-            # Highlight metrics
+            # Highlight metrics with native bordered containers
             m1, m2, m3, m4 = st.columns(4)
             with m1:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-label">Skill Average</div>
-                    <div class="metric-val">{summary.get('skill_average') or 'N/A'}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.metric(
+                    label="Skill Average",
+                    value=summary.get("skill_average") or "N/A",
+                    border=True,
+                    height="stretch",
+                )
             with m2:
                 dungeons = summary.get("dungeons", {})
-                cata_val = dungeons.get('catacombs_level') if (dungeons.get('available') and dungeons.get('catacombs_level') is not None) else 'N/A'
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-label">Catacombs Level</div>
-                    <div class="metric-val">{cata_val}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                cata_val = dungeons.get("catacombs_level") if (dungeons.get("available") and dungeons.get("catacombs_level") is not None) else "N/A"
+                st.metric(
+                    label="Catacombs Level",
+                    value=cata_val,
+                    border=True,
+                    height="stretch",
+                )
             with m3:
                 slayers = summary.get("slayer", {})
                 zombie_lvl = slayers.get("zombie", {}).get("level") if slayers.get("available") else None
-                zombie_val = f"Lvl {zombie_lvl}" if zombie_lvl is not None else 'N/A'
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-label">Zombie Slayer</div>
-                    <div class="metric-val">{zombie_val}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                zombie_val = f"Lvl {zombie_lvl}" if zombie_lvl is not None else "N/A"
+                st.metric(
+                    label="Zombie Slayer",
+                    value=zombie_val,
+                    border=True,
+                    height="stretch",
+                )
             with m4:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-label">Datasets Acquired</div>
-                    <div class="metric-val">{outcome['success_count']}/{outcome['total_count']}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.metric(
+                    label="Datasets Acquired",
+                    value=f"{outcome['success_count']} / {outcome['total_count']}",
+                    border=True,
+                    height="stretch",
+                )
 
             # Downloads section
             if st.session_state.zip_buffer:
-                st.markdown("### Download Data Package")
+                st.space("small")
                 st.download_button(
-                    label=f"Download Archive ({st.session_state.zip_filename})",
+                    label=f"Download Complete Archive ({st.session_state.zip_filename})",
+                    icon=":material/download:",
                     data=st.session_state.zip_buffer.getvalue(),
                     file_name=st.session_state.zip_filename,
                     mime="application/zip",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
             # Progression Priorities Tab
             tab_priorities, tab_endpoints, tab_files = st.tabs([
-                "Progression Priorities", "Endpoint Status", "File Previews"
+                ":material/checklist: Progression Priorities",
+                ":material/network_check: Endpoint Status",
+                ":material/code: File Previews",
             ])
 
             with tab_priorities:
                 st.markdown("**Rule-Based Next Steps:**")
                 priorities = summary.get("progression_priorities", [])
                 for item in priorities:
-                    st.info(item)
+                    st.info(item, icon=":material/arrow_forward:")
 
                 st.caption("Note: Recommendations are derived using deterministic game logic. Progression data depends on enabled in-game API settings.")
 
@@ -531,43 +578,47 @@ with tab_player:
                     st.json(results[preview_category].data, expanded=False)
 
 with tab_public:
-    st.subheader("Public Game Resources (Keyless)")
-    st.markdown(
-        "Extract official Hypixel SkyBlock item schemas, skill definitions, and collection unlock milestones. "
-        "These public endpoints require **no API key**, **no Minecraft username**, and **no player authentication**."
-    )
-
-    c_pub1, c_pub2, c_pub3 = st.columns(3)
-    with c_pub1:
-        chk_pub_items = st.checkbox(
-            "Items Schema",
-            value=True,
-            help="Official SkyBlock item definitions, weapon/armor stats, and rarity levels.",
-        )
-    with c_pub2:
-        chk_pub_skills = st.checkbox(
-            "Skills Schema",
-            value=True,
-            help="Official skill types, level caps, and leveling formulas.",
-        )
-    with c_pub3:
-        chk_pub_collections = st.checkbox(
-            "Collections Schema",
-            value=True,
-            help="Official collection categories, items, and unlock milestones.",
+    with st.container(border=True):
+        st.markdown("**:material/public: Public Game Resources (Keyless)**")
+        st.caption(
+            "Extract official Hypixel SkyBlock item schemas, skill definitions, and collection unlock milestones. "
+            "These public endpoints require no API key, no Minecraft username, and no player authentication."
         )
 
-    selected_pub_categories = []
-    if chk_pub_items:
-        selected_pub_categories.append("items")
-    if chk_pub_skills:
-        selected_pub_categories.append("skills_resource")
-    if chk_pub_collections:
-        selected_pub_categories.append("collections_resource")
+        c_pub1, c_pub2, c_pub3 = st.columns(3)
+        with c_pub1:
+            chk_pub_items = st.checkbox(
+                "Items Schema",
+                value=True,
+                help="Official SkyBlock item definitions, weapon/armor stats, and rarity levels.",
+            )
+        with c_pub2:
+            chk_pub_skills = st.checkbox(
+                "Skills Schema",
+                value=True,
+                help="Official skill types, level caps, and leveling formulas.",
+            )
+        with c_pub3:
+            chk_pub_collections = st.checkbox(
+                "Collections Schema",
+                value=True,
+                help="Official collection categories, items, and unlock milestones.",
+            )
 
-    if st.button("Extract Public Resources", type="primary", use_container_width=True):
+        selected_pub_categories = []
+        if chk_pub_items:
+            selected_pub_categories.append("items")
+        if chk_pub_skills:
+            selected_pub_categories.append("skills_resource")
+        if chk_pub_collections:
+            selected_pub_categories.append("collections_resource")
+
+        st.space("small")
+        pub_trigger = st.button("Extract Public Resources", icon=":material/cloud_download:", type="primary", width="stretch")
+
+    if pub_trigger:
         if not selected_pub_categories:
-            st.warning("Please select at least one public resource to extract.")
+            st.warning("Please select at least one public resource to extract.", icon=":material/warning:")
         else:
             pub_client = HypixelAPIClient(api_key=None)
             pub_progress = st.progress(0, text="Fetching public resources...")
@@ -587,7 +638,7 @@ with tab_public:
                     st.session_state.public_zip_buffer = None
                     st.session_state.public_zip_filename = None
                     pub_progress.progress(100, text="Public resource extraction failed for all requested endpoints.")
-                    st.error("Extraction failed: None of the requested public resource endpoints responded successfully. Please verify your network connection and Hypixel API status.")
+                    st.error("Extraction failed: None of the requested public resource endpoints responded successfully. Please verify your network connection and Hypixel API status.", icon=":material/error:")
                 else:
                     pub_exporter = PublicResourceExporter(results=pub_results)
                     pub_zip_buffer = pub_exporter.build_zip_in_memory()
@@ -599,20 +650,20 @@ with tab_public:
 
                     if pub_outcome["status"] == "complete_success":
                         pub_progress.progress(100, text=f"All {pub_outcome['total_count']} public resources extracted successfully.")
-                        st.success(f"All {pub_outcome['total_count']} public resource schemas successfully extracted.")
+                        st.success(f"All {pub_outcome['total_count']} public resource schemas successfully extracted.", icon=":material/check_circle:")
                     else:
                         pub_progress.progress(100, text=f"Partial extraction completed: {pub_outcome['success_count']} of {pub_outcome['total_count']} public resources acquired.")
-                        st.warning(f"Partial extraction: {pub_outcome['success_count']} of {pub_outcome['total_count']} public resources acquired. Some endpoints failed.")
+                        st.warning(f"Partial extraction: {pub_outcome['success_count']} of {pub_outcome['total_count']} public resources acquired. Some endpoints failed.", icon=":material/warning:")
 
     if st.session_state.public_results:
-        st.divider()
-        st.subheader("Extracted Public Resources")
+        st.space("medium")
+        st.markdown("**:material/inventory_2: Extracted Public Resources**")
 
         pub_res = st.session_state.public_results
         pub_outcome = st.session_state.get("public_outcome", classify_extraction_outcome(pub_res))
 
         if pub_outcome["status"] == "complete_failure":
-            st.error("No public resource datasets could be extracted. Review diagnostics below.")
+            st.error("No public resource datasets could be extracted. Review diagnostics below.", icon=":material/error:")
             pub_rows = []
             for cat, r in pub_res.items():
                 pub_rows.append({
@@ -624,16 +675,21 @@ with tab_public:
             st.table(pub_rows)
         else:
             if st.session_state.public_zip_buffer:
+                st.space("small")
                 st.download_button(
                     label=f"Download Public Resources Archive ({st.session_state.public_zip_filename})",
+                    icon=":material/download:",
                     data=st.session_state.public_zip_buffer.getvalue(),
                     file_name=st.session_state.public_zip_filename,
                     mime="application/zip",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
-            tab_pub_status, tab_pub_preview = st.tabs(["Extraction Status", "Schema Inspector"])
+            tab_pub_status, tab_pub_preview = st.tabs([
+                ":material/network_check: Extraction Status",
+                ":material/code: Schema Inspector",
+            ])
             with tab_pub_status:
                 pub_rows = []
                 for cat, r in pub_res.items():
@@ -651,6 +707,5 @@ with tab_public:
                     options=[k for k, v in pub_res.items() if v.status == "success"],
                     format_func=lambda k: f"{pub_res[k].filename} ({pub_res[k].description})",
                 )
-            if preview_cat and pub_res[preview_cat].data is not None:
-                st.json(pub_res[preview_cat].data, expanded=False)
-
+                if preview_cat and pub_res[preview_cat].data is not None:
+                    st.json(pub_res[preview_cat].data, expanded=False)
