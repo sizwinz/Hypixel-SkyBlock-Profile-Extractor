@@ -148,3 +148,43 @@ def test_fetch_endpoint_errors():
     )
     with pytest.raises(APIResponseError, match="Profile not found"):
         client.fetch_endpoint("skyblock/museum")
+
+
+@responses.activate
+def test_get_skyblock_profiles_and_profile():
+    from api_client import HypixelAPIClient
+
+    client = HypixelAPIClient(api_key="valid-key-12345678-1234-1234-1234")
+
+    # Mock /v2/skyblock/profiles?uuid=...
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/profiles",
+        json={
+            "success": True,
+            "profiles": [
+                {"profile_id": "prof-1", "cute_name": "Apple"},
+                {"profile_id": "prof-2", "cute_name": "Banana"},
+            ],
+        },
+        status=200,
+    )
+
+    profiles = client.get_skyblock_profiles("b876ec32-e396-476b-a115-8438d83c67d4")
+    assert len(profiles) == 2
+    assert profiles[0]["cute_name"] == "Apple"
+
+    # Mock /v2/skyblock/profile?profile=...
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/profile",
+        json={
+            "success": True,
+            "profile": {"profile_id": "prof-1", "cute_name": "Apple", "members": {}},
+        },
+        status=200,
+    )
+
+    profile = client.get_skyblock_profile("prof-1")
+    assert profile["profile_id"] == "prof-1"
+    assert "members" in profile
