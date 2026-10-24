@@ -52,3 +52,25 @@ def test_normalize_profiles_dashed_and_undashed_uuid():
 
     assert normalized[2]["profile_id"] == "profile-gamma"
     assert normalized[2]["last_save"] == 0
+
+
+def test_select_profile_silent_and_by_name():
+    from profile_service import select_profile
+    from api_client import ProfileNotFoundError
+
+    profiles = [
+        {"profile_id": "1", "name": "Apple", "last_save": 500},
+        {"profile_id": "2", "name": "Banana", "last_save": 200},
+    ]
+
+    # Select by name (case-insensitive)
+    selected = select_profile(profiles, requested_name="banana")
+    assert selected["profile_id"] == "2"
+
+    # Silent auto-select most recent
+    selected_silent = select_profile(profiles, silent=True)
+    assert selected_silent["profile_id"] == "1"
+
+    # Empty list raises error
+    with pytest.raises(ProfileNotFoundError, match="No SkyBlock profiles found"):
+        select_profile([])
