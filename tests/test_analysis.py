@@ -67,3 +67,46 @@ def test_profile_analyzer_progression_and_disclaimer():
     assert len(summary["progression_priorities"]) >= 1
     assert "Bazaar prices" in summary["disclaimers"]["net_worth"]
     assert "in-game API privacy" in summary["disclaimers"]["api_privacy"]
+
+
+def test_profile_analyzer_missing_data_and_privacy():
+    player_uuid = "b876ec32-e396-476b-a115-8438d83c67d4"
+    analyzer = ProfileAnalyzer()
+
+    # Case 1: Partial skills available (e.g. combat and mining only)
+    profile_partial = {
+        "cute_name": "Peach",
+        "members": {
+            "b876ec32e396476ba1158438d83c67d4": {
+                "player_data": {
+                    "experience": {
+                        "SKILL_COMBAT": 600000,   # Level 20
+                        "SKILL_MINING": 1200000,  # Level 27
+                    }
+                }
+            }
+        }
+    }
+
+    summary_partial = analyzer.analyze(player_uuid=player_uuid, profile_data=profile_partial)
+    assert summary_partial["skills"]["combat"]["level"] == 20
+    assert summary_partial["skills"]["combat"]["available"] is True
+    assert summary_partial["skills"]["farming"]["level"] is None
+    assert summary_partial["skills"]["farming"]["available"] is False
+    # Skill average should ONLY average the 2 available skills: (20 + 21) / 2 = 20.5
+    assert summary_partial["skill_average"] == 20.5
+    assert summary_partial["api_privacy"]["skills_api_disabled"] is False
+
+    # Case 2: Skills API completely absent
+    profile_disabled = {
+        "cute_name": "Peach",
+        "members": {
+            "b876ec32e396476ba1158438d83c67d4": {
+                "player_data": {}
+            }
+        }
+    }
+    summary_disabled = analyzer.analyze(player_uuid=player_uuid, profile_data=profile_disabled)
+    assert summary_disabled["skill_average"] is None
+    assert summary_disabled["api_privacy"]["skills_api_disabled"] is True
+
