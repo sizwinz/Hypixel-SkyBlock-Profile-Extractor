@@ -1,5 +1,12 @@
 """Backwards-compatible CLI entry point and wrapper for skyblock_extractor."""
 
+import sys
+from pathlib import Path
+
+_src_dir = str(Path(__file__).resolve().parent / "src")
+if _src_dir not in sys.path:
+    sys.path.insert(0, _src_dir)
+
 from skyblock_extractor.cli import (
     main,
     get_api_key,
