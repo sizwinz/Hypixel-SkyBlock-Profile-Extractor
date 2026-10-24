@@ -16,7 +16,7 @@ Thank you for contributing! Our goal is to maintain a reliable, policy-compliant
 ### 1. Bug Reports
 - Open a ticket at [GitHub Issues](https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor/issues).
 - Include operating system, Python version, error logs, and reproduction steps.
-- **Never include raw API keys in issue descriptions or stack traces.**
+- **Never include raw API keys or api_key.txt contents in issue descriptions or stack traces.**
 
 ### 2. Feature Suggestions
 - Open an Issue with the `enhancement` label.
