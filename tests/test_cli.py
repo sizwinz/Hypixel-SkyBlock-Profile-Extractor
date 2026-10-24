@@ -100,5 +100,25 @@ def test_entry_points_include_src_in_sys_path():
     assert result.returncode == 0, f"Subprocess failed:\n{result.stderr}"
 
 
+def test_cli_main_exits_nonzero_on_complete_extraction_failure(monkeypatch, tmp_path):
+    import sys
+    from skyblock_extractor import cli
+
+    monkeypatch.setattr(cli, "get_api_key", lambda **kwargs: "mock-key-12345678-1234-1234-1234")
+    monkeypatch.setattr(cli, "get_player_uuid", lambda user: ("uuid-1234", "uuid1234"))
+    monkeypatch.setattr(cli, "get_profiles", lambda uuid, key: [{"profile_id": "pid-1", "name": "Apple", "game_mode": "normal"}])
+    monkeypatch.setattr(cli, "select_profile", lambda profiles, **kwargs: profiles[0])
+    # extract_data returns 0 successful extractions
+    monkeypatch.setattr(cli, "extract_data", lambda **kwargs: (tmp_path, 0))
+
+    monkeypatch.setattr(sys, "argv", ["extract_profile.py", "Tester", "-s"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code != 0
+
+
+
 
 

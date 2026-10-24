@@ -219,6 +219,10 @@ def main() -> None:
             create_zip=args.zip,
         )
 
+        if count == 0:
+            print_error(f"Extraction failed: 0 endpoints were successfully extracted to '{out_dir}'.")
+            sys.exit(1)
+
         print_header("Extraction Complete")
         print_success(f"Extracted {count} data files to: {out_dir}")
         print_info("Generated files include 'complete_profile.json', 'profile_summary.json', and 'extraction_manifest.json'.")
