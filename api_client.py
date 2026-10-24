@@ -135,6 +135,24 @@ class HypixelAPIClient:
             msg = self.redact_api_key(str(exc))
             raise SkyBlockExtractorError(f"Hypixel API connection error: {msg}") from exc
 
+    def get_skyblock_profiles(self, player_uuid: str) -> List[Dict[str, Any]]:
+        """Fetch all SkyBlock profiles associated with a player UUID."""
+        raw_uuid = player_uuid.replace("-", "").strip()
+        data = self.fetch_endpoint("skyblock/profiles", params={"uuid": raw_uuid})
+        profiles = data.get("profiles")
+        if not profiles:
+            return []
+        return profiles
+
+    def get_skyblock_profile(self, profile_id: str) -> Dict[str, Any]:
+        """Fetch detailed data for a specific SkyBlock profile."""
+        clean_id = profile_id.strip()
+        data = self.fetch_endpoint("skyblock/profile", params={"profile": clean_id})
+        profile = data.get("profile")
+        if not profile:
+            raise ProfileNotFoundError(f"SkyBlock profile '{clean_id}' was not found.")
+        return profile
+
     def redact_api_key(self, message: Optional[str]) -> str:
         """Replace occurrences of the API key with a safe redacted placeholder."""
         if not message:
