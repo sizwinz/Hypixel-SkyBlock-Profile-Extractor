@@ -160,6 +160,43 @@ def test_extractor_profile_fallback_reports_provenance_and_fallback_status():
 
 
 @responses.activate
+def test_extractor_profile_missing_payload_triggers_fallback():
+    from skyblock_extractor.extractor import ProfileExtractor, classify_extraction_outcome
+    from skyblock_extractor.api_client import HypixelAPIClient
+
+    client = HypixelAPIClient(api_key="mock-key-12345678-1234-1234-1234", max_retries=0)
+    # HTTP 200 response with null profile payload
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/profile?profile=test-p1",
+        json={"success": True, "profile": None},
+        status=200,
+    )
+
+    extractor = ProfileExtractor(client=client)
+    selected_profile = {
+        "profile_id": "test-p1",
+        "name": "Apple",
+        "game_mode": "normal",
+        "data": {"profile_id": "test-p1", "members": {}},
+    }
+
+    results = extractor.extract(
+        player_uuid="b876ec32-e396-476b-a115-8438d83c67d4",
+        profile=selected_profile,
+        categories=["profile"],
+    )
+
+    assert "profile" in results
+    prof_res = results["profile"]
+    # Must NOT report "success" when profile payload is missing
+    assert prof_res.status == "fallback"
+    assert prof_res.is_fallback is True
+    assert prof_res.source == "discovery_snapshot"
+    assert "missing 'profile' payload" in prof_res.error_message
+
+
+@responses.activate
 def test_extractor_unauthenticated_public_resource_endpoints():
     from skyblock_extractor.extractor import ProfileExtractor
     from skyblock_extractor.api_client import HypixelAPIClient

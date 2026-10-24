@@ -2,7 +2,11 @@
 
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
-from skyblock_extractor.api_client import HypixelAPIClient, SkyBlockExtractorError
+from skyblock_extractor.api_client import (
+    APIResponseError,
+    HypixelAPIClient,
+    SkyBlockExtractorError,
+)
 
 
 @dataclass
@@ -211,7 +215,10 @@ class ProfileExtractor:
             if cat == "profile":
                 try:
                     data = self.client.fetch_endpoint(spec["endpoint"], params=spec["params"])
-                    profile_payload = data.get("profile") or profile.get("data") or data
+                    profile_payload = data.get("profile")
+                    if not isinstance(profile_payload, dict) or not profile_payload:
+                        raise APIResponseError("Hypixel API response missing 'profile' payload.")
+
                     results[cat] = ExtractionResult(
                         category=cat,
                         filename=filename,
