@@ -20,6 +20,30 @@ class ExtractionResult:
 
 ProgressCallback = Callable[[int, int, str, str], None]
 
+PUBLIC_RESOURCE_SPECS: Dict[str, Dict[str, Any]] = {
+    "items": {
+        "desc": "SkyBlock Items Schema",
+        "filename": "skyblock_items.json",
+        "endpoint": "resources/skyblock/items",
+        "params": {},
+        "require_auth": False,
+    },
+    "skills_resource": {
+        "desc": "SkyBlock Skills Resource Schema",
+        "filename": "skyblock_skills_resource.json",
+        "endpoint": "resources/skyblock/skills",
+        "params": {},
+        "require_auth": False,
+    },
+    "collections_resource": {
+        "desc": "SkyBlock Collections Resource Schema",
+        "filename": "skyblock_collections_resource.json",
+        "endpoint": "resources/skyblock/collections",
+        "params": {},
+        "require_auth": False,
+    },
+}
+
 
 class ProfileExtractor:
     """Orchestrates resilient extraction across Hypixel API v2 endpoints."""
@@ -113,28 +137,53 @@ class ProfileExtractor:
                 "endpoint": "skyblock/news",
                 "params": {},
             },
-            "items": {
-                "desc": "SkyBlock Items Schema",
-                "filename": "skyblock_items.json",
-                "endpoint": "resources/skyblock/items",
-                "params": {},
-                "require_auth": False,
-            },
-            "skills_resource": {
-                "desc": "SkyBlock Skills Resource Schema",
-                "filename": "skyblock_skills_resource.json",
-                "endpoint": "resources/skyblock/skills",
-                "params": {},
-                "require_auth": False,
-            },
-            "collections_resource": {
-                "desc": "SkyBlock Collections Resource Schema",
-                "filename": "skyblock_collections_resource.json",
-                "endpoint": "resources/skyblock/collections",
-                "params": {},
-                "require_auth": False,
-            },
+            **PUBLIC_RESOURCE_SPECS,
         }
+
+    def extract_public_resources(
+        self, categories: Optional[List[str]] = None
+    ) -> Dict[str, ExtractionResult]:
+        """Extract unauthenticated public SkyBlock game resources independently of player context."""
+        target_categories = categories if categories is not None else list(PUBLIC_RESOURCE_SPECS.keys())
+        results: Dict[str, ExtractionResult] = {}
+        total = len(target_categories)
+
+        for step, cat in enumerate(target_categories, start=1):
+            if cat not in PUBLIC_RESOURCE_SPECS:
+                continue
+
+            spec = PUBLIC_RESOURCE_SPECS[cat]
+            filename = spec["filename"]
+            desc = spec["desc"]
+
+            try:
+                data = self.client.fetch_endpoint(
+                    spec["endpoint"],
+                    params=spec.get("params", {}),
+                    require_auth=spec.get("require_auth", False),
+                )
+                results[cat] = ExtractionResult(
+                    category=cat,
+                    filename=filename,
+                    description=desc,
+                    status="success",
+                    data=data,
+                )
+                if self.progress_callback:
+                    self.progress_callback(step, total, cat, "success")
+            except Exception as exc:
+                sanitized_err = self.client.redact_api_key(str(exc))
+                results[cat] = ExtractionResult(
+                    category=cat,
+                    filename=filename,
+                    description=desc,
+                    status="failed",
+                    error_message=sanitized_err,
+                )
+                if self.progress_callback:
+                    self.progress_callback(step, total, cat, "failed")
+
+        return results
 
     def extract(
         self,
