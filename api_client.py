@@ -85,6 +85,56 @@ class HypixelAPIClient:
         except requests.exceptions.RequestException as exc:
             raise SkyBlockExtractorError(f"Network error resolving player: {exc}") from exc
 
+    def fetch_endpoint(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        require_auth: bool = True,
+    ) -> Dict[str, Any]:
+        """Query a Hypixel API v2 endpoint using HTTP header authentication."""
+        clean_endpoint = endpoint.lstrip("/")
+        url = f"{HYPIXEL_API_URL}/{clean_endpoint}"
+
+        headers = {
+            "User-Agent": self.user_agent,
+            "Accept": "application/json",
+        }
+
+        if require_auth:
+            if not self._api_key:
+                raise AuthenticationError("Hypixel API Key is required for this endpoint.")
+            headers["API-Key"] = self._api_key
+
+        try:
+            resp = self.session.get(url, params=params, headers=headers, timeout=self.timeout)
+            if resp.status_code == 403:
+                raise AuthenticationError("403 Forbidden: Invalid or unauthorized Hypixel API Key.")
+            if resp.status_code == 429:
+                reset_sec = resp.headers.get("RateLimit-Reset", "unknown")
+                raise RateLimitExceededError(
+                    f"429 Too Many Requests: Rate limit exceeded (reset in {reset_sec}s)."
+                )
+
+            resp.raise_for_status()
+            data = resp.json()
+
+            if not isinstance(data, dict):
+                raise APIResponseError("Unexpected response format: expected JSON object.")
+
+            if not data.get("success", False):
+                cause = data.get("cause", "Unknown Hypixel API error")
+                raise APIResponseError(f"Hypixel API Error: {cause}")
+
+            return data
+
+        except requests.exceptions.Timeout as exc:
+            raise NetworkTimeoutError(f"Hypixel API request timed out ({clean_endpoint}).") from exc
+        except (AuthenticationError, RateLimitExceededError, APIResponseError):
+            raise
+        except requests.exceptions.RequestException as exc:
+            msg = self.redact_api_key(str(exc))
+            raise SkyBlockExtractorError(f"Hypixel API connection error: {msg}") from exc
+
     def redact_api_key(self, message: Optional[str]) -> str:
         """Replace occurrences of the API key with a safe redacted placeholder."""
         if not message:
