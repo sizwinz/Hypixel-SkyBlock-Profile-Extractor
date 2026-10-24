@@ -38,6 +38,7 @@ The utility provides:
 | **Complete Profile** | Inventories, Skills, Slayers, Dungeons, Collections, Wardrobe, Vault | `complete_profile.json` |
 | **Progression Summary** | Skill averages, Catacombs milestones, Slayer boss tiers, explainable recommendations | `profile_summary.json` |
 | **Integrity Manifest** | SHA-256 file hashes, endpoint status mapping, extraction metadata | `extraction_manifest.json` |
+| **Public Game Schemas** | Keyless items schema, skill leveling formulas, collection tiers | `skyblock_items.json`, `skyblock_skills_resource.json`, `skyblock_collections_resource.json` |
 | **Garden Data** | Garden level, plot unlock status, crop milestones, visitor count | `garden_data.json` |
 | **Museum Data** | Donated items, museum appraisals, special collectibles | `museum_data.json` |
 | **Guild Data** | Guild roster, rank tiers, guild experience | `guild_data.json` |
@@ -91,13 +92,21 @@ Launch the Streamlit web dashboard:
 streamlit run app.py
 ```
 
-Workflow:
-1. Provide your Hypixel API key in the sidebar.
+The web application provides two distinct workflows:
+
+#### Workflow A: Player Profile Backup
+1. In desktop local mode, enter your Hypixel API key in the sidebar. On hosted instances with a preconfigured server key, the server credential is used automatically; visitor key entry is omitted to comply with Hypixel security policies.
 2. Enter your Minecraft username and click **Find Profiles**.
 3. Select your target SkyBlock profile (e.g. Tomato, Apple, Ironman).
 4. Choose the categories to export.
 5. Click **Start Extraction**. Monitor real-time progress.
-6. Review calculated metrics and click **Download Archive** to download a complete ZIP package directly through your browser.
+6. Review calculated progression metrics and click **Download Archive** to download a complete ZIP package with SHA-256 integrity checksums.
+
+#### Workflow B: Public Game Resources (Keyless)
+1. Navigate to the **Public Game Resources** tab.
+2. Select which public game schemas to extract (Items, Skills, Collections).
+3. Click **Extract Public Resources**. No API key or player account required.
+4. Preview the schemas directly in the web UI and download the consolidated archive.
 
 ### 2. Python Command-Line Interface
 
@@ -176,6 +185,7 @@ Hypixel-SkyBlock-Profile-Extractor/
 ├── tests/                     # Automated unit and integration test suite
 │   ├── test_analysis.py
 │   ├── test_api_client.py
+│   ├── test_app.py
 │   ├── test_cli.py
 │   ├── test_exporter.py
 │   ├── test_extractor.py
