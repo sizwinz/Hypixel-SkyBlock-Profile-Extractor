@@ -43,6 +43,7 @@ All Hypixel requests target the official v2 base path: `https://api.hypixel.net/
 | `skyblock/bazaar` | GET | `API-Key` Header | None | Live market buy/sell order book snapshot |
 | `skyblock/auction` | GET | `API-Key` Header | `profile=<profile_id>` | Active auction listings for target profile |
 | `skyblock/news` | GET | `API-Key` Header | None | In-game announcements and update logs |
+| `resources/skyblock/items` | GET | None (Public Keyless) | None | Official SkyBlock item schema and registry definitions |
 
 ---
 
@@ -58,8 +59,9 @@ All Hypixel requests target the official v2 base path: `https://api.hypixel.net/
 ## 5. Rate Limiting & Concurrency Policies
 
 - **Interactive Execution Only**: Extractions execute sequentially on user demand. No scheduled jobs, background workers, or daemon services exist.
-- **HTTP 429 Resilience**: When an HTTP 429 response is encountered, the client parses the `RateLimit-Reset` header and pauses before continuing.
-- **Request Pacing**: The standalone PowerShell utility includes configurable request delays (`$Script:RateLimitMs = 500`) to remain well within personal quota limits.
+- **HTTP 429 Resilience**: When an HTTP 429 response is encountered, the client parses the `RateLimit-Reset` header, applies bounded exponential backoff with random jitter, and retries the request up to configured retry limits.
+- **In-Memory TTL Caching**: Static resource endpoints (such as `resources/skyblock/items`) and global catalog snapshots (such as Bazaar prices and active fire sales) are cached in-memory with appropriate TTLs to eliminate duplicate calls without tracking players.
+- **Request Pacing**: The standalone Windows PowerShell utility includes configurable request delays (`$Script:RateLimitMs = 500`) to remain well within personal quota limits.
 - **Timeout Enclosure**: All HTTP requests enforce an explicit network timeout (default: 30 seconds) to prevent hanging threads.
 
 ---

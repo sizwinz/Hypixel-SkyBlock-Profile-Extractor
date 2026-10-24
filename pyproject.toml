@@ -7,7 +7,7 @@ name = "skyblock-profile-extractor"
 version = "2.1.0"
 description = "Extract and serialize Hypixel SkyBlock profile data for personal analysis."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "requests>=2.31.0",
     "streamlit>=1.30.0",
