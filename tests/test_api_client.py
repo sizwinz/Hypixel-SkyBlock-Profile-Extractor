@@ -135,6 +135,36 @@ def test_fetch_endpoint_errors():
 
 
 @responses.activate
+def test_fetch_endpoint_429_retry_recovery(monkeypatch):
+    client = HypixelAPIClient(api_key="valid-key-12345678-1234-1234-1234", max_retries=2)
+    sleep_calls = []
+    monkeypatch.setattr("time.sleep", lambda s: sleep_calls.append(s))
+
+    # First call returns 429
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/garden",
+        headers={"RateLimit-Reset": "1"},
+        status=429,
+    )
+    # Second call succeeds
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/garden",
+        json={"success": True, "garden": {"level": 10}},
+        status=200,
+    )
+
+    data = client.fetch_endpoint("skyblock/garden")
+    assert data["success"] is True
+    assert data["garden"]["level"] == 10
+    assert len(responses.calls) == 2
+    assert len(sleep_calls) == 1
+    assert sleep_calls[0] > 0
+
+
+
+@responses.activate
 def test_get_skyblock_profiles_and_profile():
     client = HypixelAPIClient(api_key="valid-key-12345678-1234-1234-1234")
 

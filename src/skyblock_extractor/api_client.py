@@ -1,8 +1,11 @@
 """Hypixel and Mojang API client with security compliance and rate limit handling."""
 
-import requests
-from typing import Any, Dict, List, Optional, Tuple
+import random
 import re
+import time
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
 
 HYPIXEL_API_URL = "https://api.hypixel.net/v2"
 MOJANG_API_URL = "https://api.mojang.com"
@@ -46,10 +49,14 @@ class HypixelAPIClient:
         api_key: Optional[str] = None,
         timeout: float = DEFAULT_TIMEOUT,
         user_agent: str = DEFAULT_USER_AGENT,
+        max_retries: int = 3,
+        max_retry_delay: float = 10.0,
     ):
         self._api_key = api_key.strip() if api_key else ""
         self.timeout = timeout
         self.user_agent = user_agent
+        self.max_retries = max_retries
+        self.max_retry_delay = max_retry_delay
         self.session = requests.Session()
 
     def __repr__(self) -> str:
@@ -105,35 +112,48 @@ class HypixelAPIClient:
                 raise AuthenticationError("Hypixel API Key is required for this endpoint.")
             headers["API-Key"] = self._api_key
 
-        try:
-            resp = self.session.get(url, params=params, headers=headers, timeout=self.timeout)
-            if resp.status_code == 403:
-                raise AuthenticationError("403 Forbidden: Invalid or unauthorized Hypixel API Key.")
-            if resp.status_code == 429:
-                reset_sec = resp.headers.get("RateLimit-Reset", "unknown")
-                raise RateLimitExceededError(
-                    f"429 Too Many Requests: Rate limit exceeded (reset in {reset_sec}s)."
-                )
+        attempt = 0
+        while True:
+            try:
+                resp = self.session.get(url, params=params, headers=headers, timeout=self.timeout)
+                if resp.status_code == 403:
+                    raise AuthenticationError("403 Forbidden: Invalid or unauthorized Hypixel API Key.")
+                if resp.status_code == 429:
+                    reset_header = resp.headers.get("RateLimit-Reset", "")
+                    try:
+                        reset_sec = float(reset_header) if reset_header else 1.0
+                    except (ValueError, TypeError):
+                        reset_sec = 1.0
 
-            resp.raise_for_status()
-            data = resp.json()
+                    if attempt < self.max_retries and reset_sec <= self.max_retry_delay:
+                        attempt += 1
+                        sleep_sec = max(reset_sec, 0.1) + random.uniform(0.05, 0.2)
+                        time.sleep(sleep_sec)
+                        continue
 
-            if not isinstance(data, dict):
-                raise APIResponseError("Unexpected response format: expected JSON object.")
+                    raise RateLimitExceededError(
+                        f"429 Too Many Requests: Rate limit exceeded (reset in {reset_header or 'unknown'}s)."
+                    )
 
-            if not data.get("success", False):
-                cause = data.get("cause", "Unknown Hypixel API error")
-                raise APIResponseError(f"Hypixel API Error: {cause}")
+                resp.raise_for_status()
+                data = resp.json()
 
-            return data
+                if not isinstance(data, dict):
+                    raise APIResponseError("Unexpected response format: expected JSON object.")
 
-        except requests.exceptions.Timeout as exc:
-            raise NetworkTimeoutError(f"Hypixel API request timed out ({clean_endpoint}).") from exc
-        except (AuthenticationError, RateLimitExceededError, APIResponseError):
-            raise
-        except requests.exceptions.RequestException as exc:
-            msg = self.redact_api_key(str(exc))
-            raise SkyBlockExtractorError(f"Hypixel API connection error: {msg}") from exc
+                if not data.get("success", False):
+                    cause = data.get("cause", "Unknown Hypixel API error")
+                    raise APIResponseError(f"Hypixel API Error: {cause}")
+
+                return data
+
+            except requests.exceptions.Timeout as exc:
+                raise NetworkTimeoutError(f"Hypixel API request timed out ({clean_endpoint}).") from exc
+            except (AuthenticationError, RateLimitExceededError, APIResponseError):
+                raise
+            except requests.exceptions.RequestException as exc:
+                msg = self.redact_api_key(str(exc))
+                raise SkyBlockExtractorError(f"Hypixel API connection error: {msg}") from exc
 
     def get_skyblock_profiles(self, player_uuid: str) -> List[Dict[str, Any]]:
         """Fetch all SkyBlock profiles associated with a player UUID."""
