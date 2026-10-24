@@ -198,3 +198,130 @@ class ProfileExporter:
         buffer = self.build_zip_in_memory()
         zip_path.write_bytes(buffer.getvalue())
         return zip_path
+
+
+class PublicResourceExporter:
+    """Manages file writing, manifest calculation, and ZIP creation for exported public game schemas."""
+
+    def __init__(
+        self,
+        results: Dict[str, ExtractionResult],
+        base_dir: Optional[Path] = None,
+        custom_out_dir: Optional[Path] = None,
+    ):
+        self.results = results
+        self.base_dir = base_dir or Path.cwd()
+        self.custom_out_dir = custom_out_dir
+        self.timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    @property
+    def output_dir(self) -> Path:
+        """Resolve final output directory for public resources."""
+        if self.custom_out_dir:
+            return self.custom_out_dir
+        return self.base_dir / f"SkyBlock_Public_Resources_{self.timestamp_str}"
+
+    def build_export_payloads(self) -> Dict[str, bytes]:
+        """Prepare in-memory dictionary of filename to serialized UTF-8 bytes."""
+        payloads: Dict[str, bytes] = {}
+
+        for cat, res in self.results.items():
+            if res.status == "success" and res.data is not None:
+                encoded = json.dumps(res.data, indent=2, ensure_ascii=False).encode("utf-8")
+                payloads[res.filename] = encoded
+
+        file_entries: Dict[str, Dict[str, Any]] = {}
+        for filename, data_bytes in payloads.items():
+            file_entries[filename] = {
+                "sha256": calculate_sha256(data_bytes),
+                "size_bytes": len(data_bytes),
+            }
+
+        successful_count = sum(1 for r in self.results.values() if r.status == "success")
+        failed_count = sum(1 for r in self.results.values() if r.status == "failed")
+        skipped_count = sum(1 for r in self.results.values() if r.status == "skipped")
+
+        manifest = {
+            "generator": f"SkyBlock-Profile-Extractor v{VERSION}",
+            "generated_at": datetime.now().isoformat(),
+            "resource_type": "public_game_resources",
+            "summary": {
+                "total_requested": len(self.results),
+                "successful": successful_count,
+                "failed": failed_count,
+                "skipped": skipped_count,
+            },
+            "status_details": {
+                cat: {
+                    "filename": r.filename,
+                    "status": r.status,
+                    "error_message": r.error_message,
+                }
+                for cat, r in self.results.items()
+            },
+            "files": file_entries,
+            "disclaimer": (
+                "Public game resources extracted via official Hypixel API v2 unauthenticated endpoints. "
+                "Not affiliated with or endorsed by Hypixel."
+            ),
+        }
+
+        manifest_bytes = json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
+        payloads["extraction_manifest.json"] = manifest_bytes
+
+        readme_lines = [
+            "HYPIXEL SKYBLOCK PUBLIC GAME RESOURCES REPORT",
+            "=" * 50,
+            f"Generated:   {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Endpoints:   {successful_count}/{len(self.results)} schemas successfully extracted",
+            "",
+            "RESOURCE SCHEMAS:",
+            "-" * 50,
+        ]
+        for cat, r in self.results.items():
+            status_tag = "[OK]    " if r.status == "success" else "[FAILED]" if r.status == "failed" else "[SKIP]  "
+            err_info = f" ({r.error_message})" if r.error_message else ""
+            readme_lines.append(f"{status_tag} {r.filename:32} - {r.description}{err_info}")
+
+        readme_lines.extend([
+            "",
+            "NOTES & DISCLAIMERS:",
+            "-" * 50,
+            "1. These datasets represent official Hypixel public game schemas (items, skills, collections).",
+            "2. No player UUID or API authentication was used to acquire these files.",
+            "3. 'extraction_manifest.json' contains SHA256 integrity checksums for all files.",
+        ])
+
+        payloads["README.txt"] = "\n".join(readme_lines).encode("utf-8")
+        return payloads
+
+    def export_to_directory(self) -> Path:
+        """Write all generated payloads to destination directory."""
+        dir_path = self.output_dir
+        dir_path.mkdir(parents=True, exist_ok=True)
+
+        payloads = self.build_export_payloads()
+        for filename, data_bytes in payloads.items():
+            target_file = dir_path / filename
+            target_file.write_bytes(data_bytes)
+
+        return dir_path
+
+    def build_zip_in_memory(self) -> io.BytesIO:
+        """Create an in-memory ZIP archive of public schemas."""
+        payloads = self.build_export_payloads()
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for filename, data_bytes in payloads.items():
+                zf.writestr(filename, data_bytes)
+        buffer.seek(0)
+        return buffer
+
+    def create_zip_archive(self, target_zip_path: Optional[Path] = None) -> Path:
+        """Write a ZIP archive of public schemas to disk."""
+        dir_path = self.export_to_directory()
+        zip_path = target_zip_path or dir_path.with_suffix(".zip")
+        buffer = self.build_zip_in_memory()
+        zip_path.write_bytes(buffer.getvalue())
+        return zip_path
+
