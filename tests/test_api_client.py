@@ -107,3 +107,44 @@ def test_fetch_endpoint_header_auth():
     req = responses.calls[0].request
     assert req.headers.get("API-Key") == test_key
     assert "key=" not in req.url
+
+
+@responses.activate
+def test_fetch_endpoint_errors():
+    from api_client import (
+        HypixelAPIClient,
+        AuthenticationError,
+        RateLimitExceededError,
+        APIResponseError,
+    )
+
+    client = HypixelAPIClient(api_key="bad-key-12345678-1234-1234-1234")
+
+    # 403 Forbidden
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/profiles",
+        status=403,
+    )
+    with pytest.raises(AuthenticationError, match="403 Forbidden"):
+        client.fetch_endpoint("skyblock/profiles")
+
+    # 429 Rate Limit
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/garden",
+        headers={"RateLimit-Reset": "42"},
+        status=429,
+    )
+    with pytest.raises(RateLimitExceededError, match="429 Too Many Requests.*reset in 42s"):
+        client.fetch_endpoint("skyblock/garden")
+
+    # Hypixel success=false response
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/museum",
+        json={"success": False, "cause": "Profile not found"},
+        status=200,
+    )
+    with pytest.raises(APIResponseError, match="Profile not found"):
+        client.fetch_endpoint("skyblock/museum")
