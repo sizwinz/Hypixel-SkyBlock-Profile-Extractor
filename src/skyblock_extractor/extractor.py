@@ -11,9 +11,11 @@ class ExtractionResult:
     category: str
     filename: str
     description: str
-    status: str  # "success" | "skipped" | "failed"
+    status: str  # "success" | "fallback" | "skipped" | "failed"
     error_message: Optional[str] = None
     data: Optional[Any] = None
+    is_fallback: bool = False
+    source: str = "fresh"  # "fresh" | "discovery_snapshot"
 
 
 ProgressCallback = Callable[[int, int, str, str], None]
@@ -158,19 +160,22 @@ class ProfileExtractor:
                         self.progress_callback(step, total, cat, "success")
                     continue
                 except Exception as exc:
+                    sanitized_err = self.client.redact_api_key(str(exc))
                     # Fallback to pre-fetched profile data if available
                     if profile.get("data"):
                         results[cat] = ExtractionResult(
                             category=cat,
                             filename=filename,
                             description=desc,
-                            status="success",
+                            status="fallback",
+                            error_message=f"Fresh profile fetch failed ({sanitized_err}); fell back to discovery snapshot.",
                             data=profile["data"],
+                            is_fallback=True,
+                            source="discovery_snapshot",
                         )
                         if self.progress_callback:
-                            self.progress_callback(step, total, cat, "success")
+                            self.progress_callback(step, total, cat, "fallback")
                         continue
-                    sanitized_err = self.client.redact_api_key(str(exc))
                     results[cat] = ExtractionResult(
                         category=cat,
                         filename=filename,
@@ -215,13 +220,15 @@ class ProfileExtractor:
 def classify_extraction_outcome(results: Dict[str, ExtractionResult]) -> Dict[str, Any]:
     """Classify results into complete_success, partial_success, or complete_failure."""
     total_count = len(results)
-    success_count = sum(1 for r in results.values() if r.status == "success")
+    success_count = sum(1 for r in results.values() if r.status == "success" and not r.is_fallback)
+    fallback_count = sum(1 for r in results.values() if r.status == "fallback" or r.is_fallback)
     failed_count = sum(1 for r in results.values() if r.status == "failed")
     skipped_count = sum(1 for r in results.values() if r.status == "skipped")
 
-    if total_count == 0 or success_count == 0:
+    acquired_count = success_count + fallback_count
+    if total_count == 0 or acquired_count == 0:
         status = "complete_failure"
-    elif success_count == total_count:
+    elif success_count == total_count and fallback_count == 0:
         status = "complete_success"
     else:
         status = "partial_success"
@@ -230,6 +237,7 @@ def classify_extraction_outcome(results: Dict[str, ExtractionResult]) -> Dict[st
         "status": status,
         "total_count": total_count,
         "success_count": success_count,
+        "fallback_count": fallback_count,
         "failed_count": failed_count,
         "skipped_count": skipped_count,
     }

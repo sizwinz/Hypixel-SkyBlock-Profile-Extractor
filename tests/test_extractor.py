@@ -117,3 +117,46 @@ def test_classify_extraction_outcome_states():
     assert outcome_all_fail["total_count"] == 1
 
 
+@responses.activate
+def test_extractor_profile_fallback_reports_provenance_and_fallback_status():
+    from skyblock_extractor.extractor import ProfileExtractor, classify_extraction_outcome
+    from skyblock_extractor.api_client import HypixelAPIClient
+
+    client = HypixelAPIClient(api_key="mock-key-12345678-1234-1234-1234", max_retries=0)
+    # Mock fresh profile request to fail with 500
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/profile?profile=test-p1",
+        status=500,
+    )
+
+    extractor = ProfileExtractor(client=client)
+    selected_profile = {
+        "profile_id": "test-p1",
+        "name": "Apple",
+        "game_mode": "normal",
+        "data": {"profile_id": "test-p1", "members": {}},
+    }
+
+    results = extractor.extract(
+        player_uuid="b876ec32-e396-476b-a115-8438d83c67d4",
+        profile=selected_profile,
+        categories=["profile"],
+    )
+
+    assert "profile" in results
+    prof_res = results["profile"]
+    assert prof_res.status == "fallback"
+    assert prof_res.is_fallback is True
+    assert prof_res.source == "discovery_snapshot"
+    assert prof_res.error_message is not None
+    assert "fell back to discovery snapshot" in prof_res.error_message
+
+    # Classification should recognize fallback as partial_success, not complete_success
+    outcome = classify_extraction_outcome(results)
+    assert outcome["status"] == "partial_success"
+    assert outcome["fallback_count"] == 1
+    assert outcome["success_count"] == 0
+
+
+
