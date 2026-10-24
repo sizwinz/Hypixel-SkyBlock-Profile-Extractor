@@ -74,3 +74,20 @@ def test_select_profile_silent_and_by_name():
     # Empty list raises error
     with pytest.raises(ProfileNotFoundError, match="No SkyBlock profiles found"):
         select_profile([])
+
+
+def test_empty_profiles_and_missing_fields():
+    from profile_service import normalize_profiles
+
+    # Profiles with missing or corrupt fields
+    raw = [
+        None,
+        {},
+        {"profile_id": "p-missing", "members": None},
+        {"profile_id": "p-str-save", "members": {"test-uuid": {"last_save": "invalid-timestamp"}}},
+    ]
+    normalized = normalize_profiles(raw, "test-uuid")
+
+    assert len(normalized) == 2
+    assert normalized[0]["profile_id"] in ["p-missing", "p-str-save"]
+    assert normalized[0]["last_save"] == 0
