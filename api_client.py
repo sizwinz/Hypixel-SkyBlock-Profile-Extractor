@@ -37,6 +37,9 @@ class HypixelAPIClient:
     def __init__(self, api_key: Optional[str] = None):
         self._api_key = api_key.strip() if api_key else ""
 
+    def __repr__(self) -> str:
+        return f"<HypixelAPIClient authenticated={bool(self._api_key)}>"
+
     def redact_api_key(self, message: Optional[str]) -> str:
         """Replace occurrences of the API key with a safe redacted placeholder."""
         if not message:

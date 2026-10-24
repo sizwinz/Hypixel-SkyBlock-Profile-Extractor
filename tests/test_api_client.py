@@ -31,3 +31,17 @@ def test_api_key_redaction():
     assert raw_key not in sanitized
     assert "[REDACTED_API_KEY]" in sanitized
     assert client.redact_api_key(None) == ""
+
+
+def test_client_repr_safe():
+    from api_client import HypixelAPIClient
+
+    raw_key = "12345678-1234-1234-1234-123456789abc"
+    client = HypixelAPIClient(api_key=raw_key)
+
+    repr_str = repr(client)
+    assert repr_str == "<HypixelAPIClient authenticated=True>"
+    assert raw_key not in repr_str
+
+    unauth_client = HypixelAPIClient()
+    assert repr(unauth_client) == "<HypixelAPIClient authenticated=False>"
