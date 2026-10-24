@@ -55,9 +55,9 @@ class ProfileExporter:
         """Prepare in-memory dictionary of filename to serialized UTF-8 bytes."""
         payloads: Dict[str, bytes] = {}
 
-        # 1. Extracted endpoint data
+        # 1. Extracted endpoint data (including usable fallback data)
         for cat, res in self.results.items():
-            if res.status == "success" and res.data is not None:
+            if res.status in ("success", "fallback") and res.data is not None:
                 encoded = json.dumps(res.data, indent=2, ensure_ascii=False).encode("utf-8")
                 payloads[res.filename] = encoded
 
@@ -74,7 +74,8 @@ class ProfileExporter:
                 "size_bytes": len(data_bytes),
             }
 
-        successful_count = sum(1 for r in self.results.values() if r.status == "success")
+        successful_count = sum(1 for r in self.results.values() if r.status == "success" and not r.is_fallback)
+        fallback_count = sum(1 for r in self.results.values() if r.status == "fallback" or r.is_fallback)
         failed_count = sum(1 for r in self.results.values() if r.status == "failed")
         skipped_count = sum(1 for r in self.results.values() if r.status == "skipped")
 
@@ -88,6 +89,7 @@ class ProfileExporter:
             "summary": {
                 "total_requested": len(self.results),
                 "successful": successful_count,
+                "fallback": fallback_count,
                 "failed": failed_count,
                 "skipped": skipped_count,
             },
@@ -95,6 +97,8 @@ class ProfileExporter:
                 cat: {
                     "filename": r.filename,
                     "status": r.status,
+                    "is_fallback": r.is_fallback,
+                    "source": getattr(r, "source", "fresh"),
                     "error_message": r.error_message,
                 }
                 for cat, r in self.results.items()
@@ -110,6 +114,10 @@ class ProfileExporter:
         payloads["extraction_manifest.json"] = manifest_bytes
 
         # 4. Human-readable README.txt
+        completeness_info = f"{successful_count}/{len(self.results)} endpoints successfully extracted"
+        if fallback_count:
+            completeness_info += f" ({fallback_count} using discovery fallback)"
+
         readme_lines = [
             "HYPIXEL SKYBLOCK PROFILE EXTRACTION REPORT",
             "=" * 50,
@@ -117,13 +125,18 @@ class ProfileExporter:
             f"Player:      {self.username}",
             f"UUID:        {self.player_uuid}",
             f"Profile:     {self.profile_name} ({self.profile_id})",
-            f"Completeness:{successful_count}/{len(self.results)} endpoints successfully extracted",
+            f"Completeness:{completeness_info}",
             "",
             "EXTRACTION STATUS:",
             "-" * 50,
         ]
         for cat, r in self.results.items():
-            status_tag = "[OK]    " if r.status == "success" else "[FAILED]" if r.status == "failed" else "[SKIP]  "
+            status_tag = (
+                "[OK]      " if r.status == "success" and not r.is_fallback
+                else "[FALLBACK]" if r.status == "fallback" or r.is_fallback
+                else "[FAILED]  " if r.status == "failed"
+                else "[SKIP]    "
+            )
             err_info = f" ({r.error_message})" if r.error_message else ""
             readme_lines.append(f"{status_tag} {r.filename:24} - {r.description}{err_info}")
 
