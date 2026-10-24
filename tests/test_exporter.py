@@ -3,10 +3,10 @@ import zipfile
 import io
 from pathlib import Path
 import pytest
+from skyblock_extractor.exporter import ProfileExporter
+from skyblock_extractor.extractor import ExtractionResult
 
 def test_profile_exporter_manifest_and_zip(tmp_path: Path):
-    from exporter import ProfileExporter
-    from extractor import ExtractionResult
 
     results = {
         "profile": ExtractionResult(

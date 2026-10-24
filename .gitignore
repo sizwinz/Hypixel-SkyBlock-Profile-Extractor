@@ -7,6 +7,7 @@ api_key.txt
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
 .venv/
 venv/
 env/
@@ -17,7 +18,7 @@ env/
 htmlcov/
 
 # Extracted Data & Archives
-SkyBlock_*/
+/SkyBlock_*/
 *.zip
 
 # OS Artifacts

@@ -1,7 +1,7 @@
 """Human-readable profile analysis, skill progression, and explainable recommendations."""
 
 from typing import Any, Dict, List, Optional
-from profile_service import get_member_data
+from skyblock_extractor.profile_service import get_member_data
 
 # Cumulative XP thresholds for skills 1 through 50
 SKILL_XP_THRESHOLDS = [

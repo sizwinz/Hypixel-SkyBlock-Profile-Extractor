@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 import streamlit as st
 
-from api_client import (
+from skyblock_extractor.api_client import (
     AuthenticationError,
     HypixelAPIClient,
     PlayerNotFoundError,
@@ -17,10 +17,10 @@ from api_client import (
     RateLimitExceededError,
     SkyBlockExtractorError,
 )
-from profile_service import normalize_profiles
-from extractor import ProfileExtractor, ExtractionResult
-from analysis import ProfileAnalyzer
-from exporter import ProfileExporter
+from skyblock_extractor.profile_service import normalize_profiles
+from skyblock_extractor.extractor import ProfileExtractor, ExtractionResult
+from skyblock_extractor.analysis import ProfileAnalyzer
+from skyblock_extractor.exporter import ProfileExporter
 
 APP_VERSION = "2.1.0"
 

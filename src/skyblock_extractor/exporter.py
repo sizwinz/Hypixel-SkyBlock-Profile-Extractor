@@ -7,7 +7,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
-from extractor import ExtractionResult
+from skyblock_extractor.extractor import ExtractionResult
 
 VERSION = "2.1.0"
 

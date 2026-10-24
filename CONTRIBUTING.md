@@ -62,26 +62,33 @@ Thank you for contributing! Our goal is to maintain a reliable, policy-compliant
 ## Architecture & Project Structure
 
 ```text
-├── api_client.py          # HTTP requests, API-Key header auth, retries, and error handling
-├── profile_service.py     # Mojang UUID resolution and profile normalization
-├── extractor.py           # Resilient endpoint orchestration across categories
-├── analysis.py            # Deterministic progression metrics and recommendations
-├── exporter.py            # JSON serialization, SHA-256 manifests, and in-memory ZIP generation
-├── app.py                 # Streamlit graphical interface
-├── extract_profile.py     # Backwards-compatible Python CLI
-├── extract-profile.ps1    # Native Windows PowerShell utility
-├── API_USAGE.md           # Hypixel API v2 architecture and compliance documentation
-├── PERSONAL_API_APPLICATION.md # Suggested re-application draft for Hypixel Developer Dashboard
-├── requirements.txt       # Production dependencies (requests, streamlit)
-├── requirements-dev.txt   # Development dependencies (pytest, responses)
-├── pyproject.toml         # Build system and pytest configuration
-└── tests/                 # Automated test suite
-    ├── test_api_client.py
-    ├── test_profile_service.py
-    ├── test_extractor.py
-    ├── test_analysis.py
-    ├── test_exporter.py
-    └── test_cli.py
+├── assets/                    # Project visual branding and screenshots
+├── docs/                      # Architectural and compliance documentation
+│   ├── API_USAGE.md           # Hypixel API v2 architecture and compliance documentation
+│   └── PERSONAL_API_APPLICATION.md # Suggested re-application draft for Hypixel Developer Dashboard
+├── src/
+│   └── skyblock_extractor/    # Core Python library
+│       ├── __init__.py        # Package exports
+│       ├── api_client.py      # HTTP requests, API-Key header auth, retries, and error handling
+│       ├── profile_service.py # Mojang UUID resolution and profile normalization
+│       ├── extractor.py       # Resilient endpoint orchestration across categories
+│       ├── analysis.py        # Deterministic progression metrics and recommendations
+│       ├── exporter.py        # JSON serialization, SHA-256 manifests, and in-memory ZIP generation
+│       └── cli.py             # CLI command logic
+├── tests/                     # Automated test suite
+│   ├── test_api_client.py
+│   ├── test_profile_service.py
+│   ├── test_extractor.py
+│   ├── test_analysis.py
+│   ├── test_exporter.py
+│   └── test_cli.py
+├── app.py                     # Streamlit graphical interface
+├── extract_profile.py         # Backwards-compatible Python CLI wrapper
+├── extract-profile.ps1        # Native Windows PowerShell utility
+├── requirements.txt           # Production dependencies (requests, streamlit)
+├── requirements-dev.txt       # Development dependencies (pytest, responses)
+├── pyproject.toml             # Build system, CLI console script, and pytest configuration
+└── README.md                  # Project overview and documentation
 ```
 
 ---

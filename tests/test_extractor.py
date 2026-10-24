@@ -1,11 +1,10 @@
 import pytest
 import responses
+from skyblock_extractor.extractor import ProfileExtractor
+from skyblock_extractor.api_client import HypixelAPIClient
 
 @responses.activate
 def test_extractor_resilience_and_progress():
-    from extractor import ProfileExtractor
-    from api_client import HypixelAPIClient
-
     client = HypixelAPIClient(api_key="mock-key-12345678-1234-1234-1234")
 
     # Mock endpoints

@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
-from api_client import HypixelAPIClient, SkyBlockExtractorError
+from skyblock_extractor.api_client import HypixelAPIClient, SkyBlockExtractorError
 
 
 @dataclass
