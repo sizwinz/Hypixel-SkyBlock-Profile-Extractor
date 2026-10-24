@@ -24,12 +24,30 @@ DEFAULT_CACHE_TTLS: Dict[str, float] = {
 
 def is_hosted_environment() -> bool:
     """Check if the application is running in a multi-user, server, or cloud hosted context."""
-    return bool(
-        os.environ.get("STREAMLIT_HOSTED")
-        or os.environ.get("SERVER_NAME")
-        or os.environ.get("HYPIXEL_API_KEY")
-        or os.environ.get("MULTI_USER", "").lower() in ("1", "true")
+    cloud_indicators = (
+        "STREAMLIT_HOSTED",
+        "SERVER_NAME",
+        "HYPIXEL_API_KEY",
+        "RENDER",
+        "DYNO",
+        "SPACE_ID",
+        "FLY_APP_NAME",
+        "RAILWAY_ENVIRONMENT",
+        "RAILWAY_STATIC_URL",
+        "KUBERNETES_SERVICE_HOST",
+        "WEBSITE_INSTANCE_ID",
+        "STREAMLIT_SHARING_MODE",
     )
+    if any(os.environ.get(var) for var in cloud_indicators):
+        return True
+
+    if os.environ.get("MULTI_USER", "").lower() in ("1", "true"):
+        return True
+
+    if os.environ.get("STREAMLIT_SERVER_HEADLESS", "").lower() in ("1", "true"):
+        return True
+
+    return False
 
 
 def can_persist_key_to_disk() -> bool:

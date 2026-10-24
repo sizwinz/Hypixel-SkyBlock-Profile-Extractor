@@ -240,6 +240,45 @@ def test_hosted_mode_disables_shared_file_storage(monkeypatch):
     assert can_persist_key_to_disk() is False
 
 
+def test_hosted_environment_cloud_and_headless_detection(monkeypatch):
+    from skyblock_extractor.api_client import is_hosted_environment
+
+    # Clean all potential hosted flags
+    for var in [
+        "HYPIXEL_API_KEY", "STREAMLIT_HOSTED", "MULTI_USER", "SERVER_NAME",
+        "RENDER", "DYNO", "SPACE_ID", "FLY_APP_NAME", "RAILWAY_ENVIRONMENT",
+        "KUBERNETES_SERVICE_HOST", "STREAMLIT_SERVER_HEADLESS", "STREAMLIT_SHARING_MODE",
+    ]:
+        monkeypatch.delenv(var, raising=False)
+
+    assert is_hosted_environment() is False
+
+    # Check Render
+    monkeypatch.setenv("RENDER", "true")
+    assert is_hosted_environment() is True
+    monkeypatch.delenv("RENDER")
+
+    # Check Streamlit headless server
+    monkeypatch.setenv("STREAMLIT_SERVER_HEADLESS", "true")
+    assert is_hosted_environment() is True
+    monkeypatch.delenv("STREAMLIT_SERVER_HEADLESS")
+
+    # Check HuggingFace Spaces
+    monkeypatch.setenv("SPACE_ID", "user/repo")
+    assert is_hosted_environment() is True
+    monkeypatch.delenv("SPACE_ID")
+
+    # Check Fly.io
+    monkeypatch.setenv("FLY_APP_NAME", "skyblock-app")
+    assert is_hosted_environment() is True
+    monkeypatch.delenv("FLY_APP_NAME")
+
+    # Check Heroku Dyno
+    monkeypatch.setenv("DYNO", "web.1")
+    assert is_hosted_environment() is True
+
+
+
 
 
 
