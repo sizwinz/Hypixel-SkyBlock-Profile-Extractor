@@ -6,7 +6,7 @@ from pathlib import Path
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
     page_title="SkyBlock Profile Extractor",
-    page_icon="⚔️",
+    page_icon="logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
