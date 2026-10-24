@@ -188,3 +188,29 @@ def test_get_skyblock_profiles_and_profile():
     profile = client.get_skyblock_profile("prof-1")
     assert profile["profile_id"] == "prof-1"
     assert "members" in profile
+
+
+@responses.activate
+def test_fetch_endpoint_500_and_timeout():
+    import requests
+    from api_client import HypixelAPIClient, SkyBlockExtractorError, NetworkTimeoutError
+
+    client = HypixelAPIClient(api_key="valid-key-12345678-1234-1234-1234")
+
+    # 500 Internal Server Error
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/news",
+        status=500,
+    )
+    with pytest.raises(SkyBlockExtractorError, match="Hypixel API connection error"):
+        client.fetch_endpoint("skyblock/news")
+
+    # Network timeout
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/firesales",
+        body=requests.exceptions.Timeout("Connection timed out"),
+    )
+    with pytest.raises(NetworkTimeoutError, match="timed out"):
+        client.fetch_endpoint("skyblock/firesales")

@@ -23,7 +23,7 @@ def normalize_profiles(raw_profiles: List[Dict[str, Any]], player_uuid: str) -> 
     normalized: List[Dict[str, Any]] = []
 
     for p in raw_profiles:
-        if not isinstance(p, dict):
+        if not isinstance(p, dict) or not p.get("profile_id"):
             continue
         members = p.get("members", {})
         member_data = get_member_data(members, player_uuid)
