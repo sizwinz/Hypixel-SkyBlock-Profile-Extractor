@@ -83,3 +83,27 @@ def test_get_player_uuid_errors():
     )
     with pytest.raises(PlayerNotFoundError, match="does not exist"):
         client.get_player_uuid("GhostUser99999")
+
+
+@responses.activate
+def test_fetch_endpoint_header_auth():
+    from api_client import HypixelAPIClient
+
+    test_key = "12345678-1234-1234-1234-123456789abc"
+    client = HypixelAPIClient(api_key=test_key)
+
+    responses.add(
+        responses.GET,
+        "https://api.hypixel.net/v2/skyblock/bazaar",
+        json={"success": True, "products": {}},
+        status=200,
+    )
+
+    data = client.fetch_endpoint("skyblock/bazaar")
+
+    assert data.get("success") is True
+    # Verify request headers
+    assert len(responses.calls) == 1
+    req = responses.calls[0].request
+    assert req.headers.get("API-Key") == test_key
+    assert "key=" not in req.url
