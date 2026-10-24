@@ -24,3 +24,8 @@ htmlcov/
 # OS Artifacts
 .DS_Store
 Thumbs.db
+
+# Agent Planning & Local State
+.planning/
+.ai/
+scratch/
