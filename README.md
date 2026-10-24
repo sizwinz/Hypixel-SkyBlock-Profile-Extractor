@@ -253,3 +253,9 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for co
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+<div align='center'>
+  <sub>Maintained by <a href='https://github.com/sizwinz'>sizwinz</a>. Independent utility not affiliated with Hypixel Inc. or Mojang AB.</sub>
+</div>
