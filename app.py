@@ -443,20 +443,20 @@ with tab_player:
         )
 
     # STEP 1: USERNAME INPUT
-    with st.container(border=True):
-        st.markdown("**:material/person_search: Player Lookup**")
+    with st.form("player_lookup", border=True):
+        st.markdown("**:material/person_search: Player lookup**")
         c_input, c_btn = st.columns([4, 1], vertical_alignment="bottom")
         with c_input:
             input_username = st.text_input(
-                "Minecraft Username",
+                "Minecraft username",
                 placeholder="e.g. Technoblade",
                 label_visibility="visible",
             )
         with c_btn:
-            find_btn = st.button("Find Profiles", icon=":material/search:", width="stretch", type="primary")
+            find_btn = st.form_submit_button("Find profiles", icon=":material/search:", width="stretch", type="primary")
 
-    # Reset downstream state if username changes
-    if input_username != st.session_state.last_queried_username:
+    # Keep the current results until a different player search is submitted.
+    if find_btn and input_username.strip() != st.session_state.last_queried_username:
         st.session_state.profiles = None
         st.session_state.extraction_results = None
         st.session_state.summary = None
