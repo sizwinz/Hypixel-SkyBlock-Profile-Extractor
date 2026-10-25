@@ -43,6 +43,21 @@ def test_page_uses_native_spacing_without_compact_css_overrides():
     )
 
 
+def test_subheader_compatibility_without_icon_kwarg(monkeypatch):
+    import streamlit as st
+
+    original_subheader = st.subheader
+
+    def mock_subheader(body, *args, **kwargs):
+        if "icon" in kwargs:
+            raise TypeError("subheader() got an unexpected keyword argument 'icon'")
+        return original_subheader(body, *args, **kwargs)
+
+    monkeypatch.setattr(st, "subheader", mock_subheader)
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+    assert not app.exception
+
+
 def test_player_lookup_batches_username_until_submit(monkeypatch):
     from unittest.mock import Mock
     from skyblock_extractor.api_client import HypixelAPIClient

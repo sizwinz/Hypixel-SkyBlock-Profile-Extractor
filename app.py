@@ -259,7 +259,7 @@ with tab_player:
     with col_input:
         # CARD 1: PLAYER LOOKUP
         with st.container(border=True):
-            st.subheader("Player lookup", icon=":material/person:")
+            st.subheader(":material/person: Player lookup")
             with st.form("player_lookup", border=False):
                 st.caption("Minecraft username")
                 c_in, c_btn = st.columns([3, 1.3], vertical_alignment="bottom")
@@ -324,7 +324,7 @@ with tab_player:
 
         # CARD 2: TARGET PROFILE
         with st.container(border=True):
-            st.subheader("Target profile", icon=":material/track_changes:")
+            st.subheader(":material/track_changes: Target profile")
             if st.session_state.profiles:
                 profile_choices = {}
                 for p in st.session_state.profiles:
@@ -354,7 +354,7 @@ with tab_player:
 
         # CARD 3: DATASETS TO INCLUDE
         with st.container(border=True):
-            st.subheader("Datasets to include", icon=":material/layers:")
+            st.subheader(":material/layers: Datasets to include")
             c_cat1, c_cat2 = st.columns(2)
             with c_cat1:
                 chk_profile = st.checkbox("Complete Profile", value=True, disabled=True, help="Inventories, skills, slayers, dungeons")
@@ -460,7 +460,7 @@ with tab_player:
     with col_analytics:
         # CARD 4: RESULTS AND ANALYTICS (LIVE DASHBOARD)
         with st.container(border=True):
-            st.subheader("Results and analytics", icon=":material/bar_chart:")
+            st.subheader(":material/bar_chart: Results and analytics")
             if st.session_state.extraction_results and st.session_state.summary:
                 summary = st.session_state.summary
                 outcome = st.session_state.get(
@@ -516,7 +516,7 @@ with tab_player:
 
         # CARD 5: RECOMMENDED NEXT STEPS
         with st.container(border=True):
-            st.subheader("Recommended next steps", icon=":material/lightbulb:")
+            st.subheader(":material/lightbulb: Recommended next steps")
             if st.session_state.summary:
                 priorities = st.session_state.summary.get("progression_priorities", [])
                 if priorities:
@@ -535,7 +535,7 @@ with tab_player:
 with tab_results:
     # DEEP-DIVE INSPECTION & RAW DATA EXPLORER
     if st.session_state.extraction_results:
-        st.subheader("Profile results and diagnostics", icon=":material/analytics:")
+        st.subheader(":material/analytics: Profile results and diagnostics")
         results = st.session_state.extraction_results
         outcome = st.session_state.get("extraction_outcome", classify_extraction_outcome(results))
         summary = st.session_state.summary
