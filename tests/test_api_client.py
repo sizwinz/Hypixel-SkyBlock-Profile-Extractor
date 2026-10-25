@@ -278,6 +278,21 @@ def test_hosted_environment_cloud_and_headless_detection(monkeypatch):
     assert is_hosted_environment() is True
 
 
+def test_is_streamlit_cloud_detection(monkeypatch):
+    from skyblock_extractor.api_client import is_streamlit_cloud
+
+    monkeypatch.delenv("STREAMLIT_SHARING_MODE", raising=False)
+    monkeypatch.delenv("IS_STREAMLIT_CLOUD", raising=False)
+    assert is_streamlit_cloud() is False
+
+    monkeypatch.setenv("STREAMLIT_SHARING_MODE", "true")
+    assert is_streamlit_cloud() is True
+
+    monkeypatch.delenv("STREAMLIT_SHARING_MODE")
+    monkeypatch.setenv("IS_STREAMLIT_CLOUD", "1")
+    assert is_streamlit_cloud() is True
+
+
 
 
 

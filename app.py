@@ -23,6 +23,7 @@ from skyblock_extractor.api_client import (
     SkyBlockExtractorError,
     can_persist_key_to_disk,
     is_hosted_environment,
+    is_streamlit_cloud,
 )
 from skyblock_extractor.profile_service import normalize_profiles
 from skyblock_extractor.extractor import (
@@ -36,6 +37,19 @@ from skyblock_extractor.exporter import ProfileExporter, PublicResourceExporter
 
 APP_VERSION = "2.1.0"
 
+
+def resolve_server_api_key() -> str:
+    """Resolve pre-configured server API key from environment or Streamlit secrets."""
+    key = os.environ.get("HYPIXEL_API_KEY", "").strip()
+    if not key:
+        try:
+            if hasattr(st, "secrets") and "HYPIXEL_API_KEY" in st.secrets:
+                key = str(st.secrets["HYPIXEL_API_KEY"]).strip()
+        except Exception:
+            pass
+    return key
+
+
 # --- PAGE SETUP ---
 st.set_page_config(
     page_title="SkyBlock Profile Extractor",
@@ -46,7 +60,7 @@ st.set_page_config(
 
 st.logo("assets/logo.png", size="medium")
 
-# --- MINIMALIST AESTHETIC STYLING (ZERO GLOW) ---
+# --- MINIMALIST AESTHETIC STYLING (ZERO GLOW & COMPACT LAYOUT) ---
 st.html("""
 <style>
     /* Absolute Zero Glow Invariant */
@@ -63,32 +77,67 @@ st.html("""
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    /* Clean Headings */
-    h1, h2, h3, h4, h5, h6 {
-        color: #fafafa !important;
+    /* Compact Headings */
+    h1 {
+        font-size: 1.55rem !important;
         font-weight: 600 !important;
+        color: #fafafa !important;
         letter-spacing: -0.02em;
+        margin: 0 0 0.2rem 0 !important;
+    }
+    h2 {
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        color: #fafafa !important;
+        letter-spacing: -0.02em;
+        margin: 0 0 0.2rem 0 !important;
+    }
+    h3 {
+        font-size: 1.05rem !important;
+        font-weight: 600 !important;
+        color: #fafafa !important;
+        margin: 0 0 0.2rem 0 !important;
+    }
+    h4, h5, h6 {
+        font-size: 0.92rem !important;
+        font-weight: 600 !important;
+        color: #fafafa !important;
+        margin: 0 0 0.15rem 0 !important;
+    }
+    p {
+        margin-bottom: 0.3rem !important;
+        font-size: 0.88rem !important;
+    }
+
+    /* Compact Block Spacing */
+    div[data-testid="stVerticalBlock"] {
+        gap: 0.55rem !important;
+    }
+    div[data-testid="stHorizontalBlock"] {
+        gap: 0.55rem !important;
     }
 
     /* Clean Card Containers */
     div[data-testid="stVerticalBlockBorderWrapper"] > div {
         border-color: #27272a !important;
-        border-radius: 8px !important;
+        border-radius: 6px !important;
         background-color: #111114 !important;
+        padding: 10px 14px !important;
     }
 
     /* Minimal Native Metrics */
     div[data-testid="stMetric"] {
-        padding: 4px 0;
+        padding: 2px 0 !important;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 1.55rem !important;
+        font-size: 1.4rem !important;
         font-weight: 600 !important;
         color: #38bdf8 !important;
         letter-spacing: -0.02em;
+        line-height: 1.2 !important;
     }
     div[data-testid="stMetricLabel"] {
-        font-size: 0.78rem !important;
+        font-size: 0.72rem !important;
         font-weight: 500 !important;
         color: #a1a1aa !important;
         text-transform: uppercase;
@@ -99,9 +148,12 @@ st.html("""
     .stButton > button {
         border-radius: 6px !important;
         font-weight: 500 !important;
+        font-size: 0.86rem !important;
         border: 1px solid #3f3f46 !important;
         background-color: #18181b !important;
         color: #f4f4f5 !important;
+        padding: 4px 14px !important;
+        min-height: 36px !important;
         transition: background-color 0.12s ease, border-color 0.12s ease !important;
     }
     .stButton > button:hover {
@@ -120,16 +172,16 @@ st.html("""
 
     /* Clean Modern Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 6px;
+        gap: 4px;
         border-bottom: 1px solid #27272a;
-        padding-bottom: 4px;
+        padding-bottom: 2px;
     }
     .stTabs [data-baseweb="tab"] {
-        height: 38px;
+        height: 34px;
         border-radius: 6px;
-        padding: 0 16px;
+        padding: 0 14px;
         font-weight: 500;
-        font-size: 0.88rem;
+        font-size: 0.85rem;
         color: #a1a1aa;
         border: 1px solid transparent;
         background: transparent;
@@ -143,9 +195,50 @@ st.html("""
         display: none !important;
     }
 
+    /* Compact Checkboxes */
+    div[data-testid="stCheckbox"] {
+        margin-bottom: 2px !important;
+        padding-top: 1px !important;
+        padding-bottom: 1px !important;
+    }
+    div[data-testid="stCheckbox"] label span {
+        font-size: 0.82rem !important;
+    }
+
+    /* Compact Priority Item */
+    .priority-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background-color: #131316;
+        border: 1px solid #27272a;
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin-bottom: 6px;
+        font-size: 0.86rem;
+        color: #e4e4e7;
+        line-height: 1.35;
+    }
+    .priority-badge {
+        display: inline-block;
+        background-color: #1e293b;
+        color: #38bdf8;
+        border: 1px solid #334155;
+        border-radius: 4px;
+        padding: 1px 7px;
+        font-size: 0.70rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+    }
+    .priority-text {
+        flex: 1;
+    }
+
     /* Clean Inputs */
     input, textarea, select {
         border-radius: 6px !important;
+        font-size: 0.88rem !important;
     }
 
     /* Progress Bar */
@@ -181,28 +274,40 @@ if "public_zip_filename" not in st.session_state:
 if "public_outcome" not in st.session_state:
     st.session_state.public_outcome = None
 
-# --- SIDEBAR: AUTHENTICATION & CONFIG ---
+# --- SIDEBAR: AUTHENTICATION, GUIDES & POLICIES ---
 with st.sidebar:
     st.markdown("### Configuration")
 
     hosted_mode = is_hosted_environment()
+    streamlit_cloud_mode = is_streamlit_cloud()
     allow_storage = can_persist_key_to_disk()
-    env_key = os.environ.get("HYPIXEL_API_KEY", "").strip()
+    server_key = resolve_server_api_key()
     key_file = Path("api_key.txt")
     file_key = ""
 
-    if hosted_mode:
+    if streamlit_cloud_mode or hosted_mode:
         api_key_input = ""
-        effective_key = env_key
-        if env_key:
-            st.success("Server API key active", icon=":material/check_circle:")
-            st.caption("Using server-configured Hypixel API credentials.")
+        effective_key = server_key
+
+        if server_key:
+            with st.container(border=True):
+                st.markdown("**:material/cloud_done: Server Credentials Active**")
+                st.caption("Running with pre-configured server credentials. Profile queries are authenticated securely.")
+        elif streamlit_cloud_mode:
+            with st.container(border=True):
+                st.markdown("**:material/cloud: Streamlit Community Cloud**")
+                st.caption(
+                    "This public instance is hosted on Streamlit Community Cloud. "
+                    "Under Hypixel Developer Policies, personal API keys are not collected through web forms on public hosted sites.\n\n"
+                    "- **Public Schemas**: You can extract unauthenticated Items, Skills, and Collections schemas under the Public Game Resources tab.\n"
+                    "- **Private Player Profiles**: Fork this repository and deploy your own private Streamlit Cloud app (adding your key in App Secrets) or run locally."
+                )
         else:
             with st.container(border=True):
                 st.markdown("**:material/lock: Hosted Multi-User Mode**")
                 st.caption(
                     "Under Hypixel Developer Policies, personal API keys must not be collected through hosted web forms. "
-                    "You can freely extract unauthenticated Public Game Resources (Items, Skills, Collections) in the Public Resources tab, "
+                    "You can extract unauthenticated Public Game Resources (Items, Skills, Collections) in the Public Resources tab, "
                     "or run this tool locally on your own machine to query profiles using a personal API key."
                 )
     else:
@@ -213,7 +318,9 @@ with st.sidebar:
                 pass
 
         with st.container(border=True):
-            st.markdown("**:material/key: Personal API Key**")
+            st.markdown("**:material/computer: Local Desktop Workspace**")
+            st.caption("Running locally on your machine. API keys remain strictly in memory on your device.")
+
             api_key_input = st.text_input(
                 "Hypixel API Key",
                 value=file_key,
@@ -221,7 +328,7 @@ with st.sidebar:
                 help="Personal API Key from developer.hypixel.net. Stored in memory on your local machine.",
             )
 
-            effective_key = api_key_input.strip() or env_key
+            effective_key = api_key_input.strip() or server_key
 
             if allow_storage:
                 save_key = st.checkbox("Persist key locally to api_key.txt", value=bool(file_key))
@@ -237,16 +344,72 @@ with st.sidebar:
                     except Exception:
                         pass
 
-    st.space("small")
-    with st.expander("API Security & Policy", expanded=False):
+    # HOW TO GET AN API KEY
+    with st.expander("**:material/help_outline: How to Get an API Key**", expanded=False):
         st.markdown("""
-        **:material/verified_user: Compliance Checklist**
-        - Requests use HTTP header auth (`API-Key`).
-        - Data is fetched on demand per user action.
-        - No continuous polling or player monitoring.
-        - Free, open-source personal utility.
+        **Step-by-step Guide:**
+        1. Open the [Hypixel Developer Portal](https://developer.hypixel.net/).
+        2. Log in using your Microsoft account linked to your Minecraft profile.
+        3. Click **Create API Key** or register a **Personal Application**.
+        4. Copy your generated `API-Key` UUID token.
+        5. Paste it into the **Hypixel API Key** field above (or configure it in `secrets.toml` if deploying to Streamlit Cloud).
+
+        **Key Details:**
+        - Personal API keys are free and provide standard rate limits (300 requests/minute).
+        - Keep your API key private; never share it with anyone.
         """)
-        st.caption("[Hypixel Developer Policies](https://developer.hypixel.net/policies/)")
+        st.link_button(
+            "Open Hypixel Developer Portal",
+            "https://developer.hypixel.net/",
+            icon=":material/open_in_new:",
+            width="stretch",
+        )
+
+    # STREAMLIT CLOUD DEPLOYMENT GUIDE
+    with st.expander("**:material/rocket_launch: Deploy on Streamlit Cloud**", expanded=False):
+        st.markdown("""
+        You can host your own private, 24/7 profile extractor on Streamlit Community Cloud for personal use:
+
+        1. **Fork** this repository to your personal GitHub account.
+        2. Navigate to [share.streamlit.io](https://share.streamlit.io/) and select **New app**.
+        3. Choose your repository fork, branch, and set `app.py` as the main file path.
+        4. In **Advanced settings > Secrets**, define:
+        ```toml
+        HYPIXEL_API_KEY = "your-hypixel-api-key-here"
+        ```
+        5. Click **Deploy**. Your private cloud instance will authenticate requests securely via server-side secrets!
+        """)
+
+    # API SECURITY & POLICY
+    with st.expander("**:material/verified_user: Hypixel Policy Compliance**", expanded=False):
+        st.markdown("""
+        - Requests authenticate via HTTP headers (`API-Key`).
+        - Data is queried on-demand upon direct user click.
+        - Strict rate-limit tracking with exponential backoff recovery.
+        - Zero background polling or continuous player surveillance.
+        - Strictly conforms to [Hypixel Developer Policies](https://developer.hypixel.net/policies/).
+        """)
+
+    # PRIVACY POLICY
+    with st.expander("**:material/privacy_tip: Privacy Policy**", expanded=False):
+        st.markdown("""
+        **Zero External Data Storage:**
+        - **No Database**: This application does not store, transmit, or record player statistics or API keys to external servers or databases.
+        - **In-Memory Lifecycle**: Profile, inventory, and progression calculations occur purely within your transient browser session.
+        - **Local Archives**: Exported JSON packages and ZIP archives are generated directly in browser memory for personal offline analysis.
+        - **Key Confidentiality**: On desktop, keys are held in memory (or written to local `api_key.txt` solely upon explicit opt-in). On hosted deployments, visitor key inputs are entirely disabled to prevent credential exposure.
+        - **Zero Tracking**: Contains no telemetry beacons, tracking cookies, or advertising scripts.
+        """)
+
+    # TERMS AND CONDITIONS
+    with st.expander("**:material/gavel: Terms and Conditions**", expanded=False):
+        st.markdown("""
+        **Terms of Service:**
+        - **Personal Use**: Intended solely for personal SkyBlock progression review, account backup, and offline data analysis.
+        - **Acceptable Use**: Users agree not to misuse or flood Hypixel API services. Automated scraping or unauthorized mass querying is prohibited.
+        - **Non-Affiliation**: This independent open-source project is not affiliated with, endorsed by, or sponsored by Hypixel Inc., Mojang Synergies AB, or Microsoft Corporation.
+        - **Software License**: Distributed under the MIT License. Provided "as is" without warranty of any kind, express or implied.
+        """)
 
     st.divider()
     st.caption(f"SkyBlock Profile Extractor v{APP_VERSION}")
@@ -258,10 +421,12 @@ with c_title:
     st.title("SkyBlock Profile Extractor")
     st.markdown("Export raw Hypixel SkyBlock profile data and deterministic progression analytics for personal analysis.")
 with c_badge:
-    if hosted_mode:
-        st.badge("Hosted Mode", icon=":material/cloud:", color="blue")
+    if streamlit_cloud_mode:
+        st.badge("Streamlit Cloud", icon=":material/cloud:", color="blue")
+    elif hosted_mode:
+        st.badge("Hosted Server", icon=":material/dns:", color="blue")
     else:
-        st.badge("Local Mode", icon=":material/computer:", color="green")
+        st.badge("Local Desktop", icon=":material/computer:", color="green")
 
 tab_player, tab_public = st.tabs([
     ":material/person: Player Profile Backup",
@@ -269,12 +434,12 @@ tab_player, tab_public = st.tabs([
 ])
 
 with tab_player:
-    if hosted_mode and not effective_key:
+    if (streamlit_cloud_mode or hosted_mode) and not effective_key:
         st.info(
-            "Hosted Multi-User Deployment: In compliance with Hypixel Developer Policies, personal API keys are not collected "
-            "through web forms on hosted sites. To back up your private player profiles, please run this application locally on your computer. "
-            "You can extract official unauthenticated public datasets without an API key under the Public Game Resources tab.",
-            icon=":material/info:",
+            "Streamlit Community Cloud Deployment: In compliance with Hypixel Developer Policies, personal API keys are not collected "
+            "through web forms on public hosted sites. You can extract official public datasets (Items, Skills, Collections) under the "
+            "Public Game Resources tab, or deploy your own private copy to Streamlit Cloud / run locally for private player profile exports.",
+            icon=":material/cloud:",
         )
 
     # STEP 1: USERNAME INPUT
@@ -338,13 +503,12 @@ with tab_player:
 
     # STEP 2 & 3: PROFILE SELECTION & CATEGORY CONFIGURATION
     if st.session_state.profiles:
-        st.space("small")
         st.markdown("**:material/tune: Profile & Extraction Scope**")
 
         col_profile, col_categories = st.columns(2)
 
         with col_profile:
-            with st.container(border=True, height="stretch"):
+            with st.container(border=True):
                 st.markdown("##### Target Profile")
                 st.caption("Select the SkyBlock profile to analyze and export.")
 
@@ -367,22 +531,39 @@ with tab_player:
                 )
                 target_profile = profile_choices[selected_label]
 
+                # Profile metadata summary
+                last_save_val = (
+                    datetime.fromtimestamp(target_profile["last_save"] / 1000).strftime("%Y-%m-%d %H:%M:%S")
+                    if target_profile["last_save"] > 0
+                    else "Never recorded"
+                )
+                c_p1, c_p2 = st.columns(2)
+                with c_p1:
+                    st.caption(f"**Mode:** {target_profile['game_mode'].capitalize()}")
+                    st.caption(f"**Profile ID:** `{target_profile['profile_id'][:8]}...`")
+                with c_p2:
+                    st.caption(f"**Last Save:** {last_save_val}")
+                    st.caption(f"**Profile Name:** {target_profile['name']}")
+
         with col_categories:
-            with st.container(border=True, height="stretch"):
-                st.markdown("##### Datasets")
+            with st.container(border=True):
+                st.markdown("##### Extraction Datasets")
                 st.caption("Choose which categories to query.")
-                chk_profile = st.checkbox("Complete Profile (Inventories, Skills, Slayers, Dungeons)", value=True, disabled=True)
-                chk_player = st.checkbox("Global Player & Minigame Stats", value=True)
-                chk_garden = st.checkbox("Garden & Farming Data", value=True)
-                chk_museum = st.checkbox("Museum Collection & Appraisals", value=True)
-                chk_guild = st.checkbox("Guild Membership & Experience", value=True)
-                chk_bazaar = st.checkbox("Bazaar Market Snapshot", value=True)
-                chk_auction = st.checkbox("Active Profile Auctions", value=True)
-                chk_news = st.checkbox("SkyBlock In-game News", value=False)
-                chk_firesales = st.checkbox("Active Fire Sales", value=False)
-                chk_items = st.checkbox("Items Schema (Public Resource)", value=True)
-                chk_skills_res = st.checkbox("Skills Schema (Public Resource)", value=False)
-                chk_colls_res = st.checkbox("Collections Schema (Public Resource)", value=False)
+                c_cat1, c_cat2 = st.columns(2)
+                with c_cat1:
+                    chk_profile = st.checkbox("Complete Profile", value=True, disabled=True, help="Inventories, skills, slayers, dungeons")
+                    chk_player = st.checkbox("Player Stats", value=True, help="Overall player stats & minigame achievements")
+                    chk_garden = st.checkbox("Garden & Farming", value=True, help="Plots, crops, milestones, visitors")
+                    chk_museum = st.checkbox("Museum Collection", value=True, help="Donated weapons, armor, appraisals")
+                    chk_guild = st.checkbox("Guild Membership", value=True, help="Guild level, members, exp")
+                    chk_bazaar = st.checkbox("Bazaar Snapshot", value=True, help="Live buy/sell market snapshot")
+                with c_cat2:
+                    chk_auction = st.checkbox("Profile Auctions", value=True, help="Active & ended player auctions")
+                    chk_news = st.checkbox("In-Game News", value=False, help="Recent SkyBlock maintenance/update news")
+                    chk_firesales = st.checkbox("Fire Sales", value=False, help="Active cosmetic fire sales")
+                    chk_items = st.checkbox("Items Schema", value=True, help="Official item definitions (Public)")
+                    chk_skills_res = st.checkbox("Skills Schema", value=False, help="Official skill formulas (Public)")
+                    chk_colls_res = st.checkbox("Collections Schema", value=False, help="Official collection milestones (Public)")
 
         selected_categories = ["profile"]
         if chk_player: selected_categories.append("player")
@@ -398,7 +579,6 @@ with tab_player:
         if chk_colls_res: selected_categories.append("collections_resource")
 
         # STEP 4: EXTRACTION TRIGGER
-        st.space("small")
         if st.button("Start Extraction", icon=":material/download:", type="primary", width="stretch"):
             client = HypixelAPIClient(api_key=effective_key)
             progress_bar = st.progress(0, text="Initializing extraction pipeline...")
@@ -471,7 +651,6 @@ with tab_player:
 
     # STEP 5: RESULTS & DOWNLOADS
     if st.session_state.extraction_results:
-        st.space("medium")
         st.markdown("**:material/analytics: Extraction Summary & Analytics**")
 
         results = st.session_state.extraction_results
@@ -530,7 +709,6 @@ with tab_player:
 
             # Downloads section
             if st.session_state.zip_buffer:
-                st.space("small")
                 st.download_button(
                     label=f"Download Complete Archive ({st.session_state.zip_filename})",
                     icon=":material/download:",
@@ -549,15 +727,24 @@ with tab_player:
             ])
 
             with tab_priorities:
-                st.markdown("**Rule-Based Next Steps:**")
+                st.markdown("**:material/checklist: Rule-Based Progression Recommendations**")
                 priorities = summary.get("progression_priorities", [])
-                for item in priorities:
-                    st.info(item, icon=":material/arrow_forward:")
+                if priorities:
+                    for idx, item in enumerate(priorities, 1):
+                        st.markdown(
+                            f"""<div class="priority-item">
+                                <span class="priority-badge">Priority {idx}</span>
+                                <span class="priority-text">{item}</span>
+                            </div>""",
+                            unsafe_allow_html=True,
+                        )
+                else:
+                    st.info("No specific progression recommendations generated for this profile.", icon=":material/info:")
 
                 st.caption("Note: Recommendations are derived using deterministic game logic. Progression data depends on enabled in-game API settings.")
 
             with tab_endpoints:
-                st.markdown("**Endpoint Extraction Status:**")
+                st.markdown("**:material/network_check: Endpoint Extraction Status**")
                 status_rows = []
                 for cat, r in results.items():
                     status_rows.append({
@@ -613,7 +800,6 @@ with tab_public:
         if chk_pub_collections:
             selected_pub_categories.append("collections_resource")
 
-        st.space("small")
         pub_trigger = st.button("Extract Public Resources", icon=":material/cloud_download:", type="primary", width="stretch")
 
     if pub_trigger:
@@ -656,7 +842,6 @@ with tab_public:
                         st.warning(f"Partial extraction: {pub_outcome['success_count']} of {pub_outcome['total_count']} public resources acquired. Some endpoints failed.", icon=":material/warning:")
 
     if st.session_state.public_results:
-        st.space("medium")
         st.markdown("**:material/inventory_2: Extracted Public Resources**")
 
         pub_res = st.session_state.public_results
@@ -675,7 +860,6 @@ with tab_public:
             st.table(pub_rows)
         else:
             if st.session_state.public_zip_buffer:
-                st.space("small")
                 st.download_button(
                     label=f"Download Public Resources Archive ({st.session_state.public_zip_filename})",
                     icon=":material/download:",
