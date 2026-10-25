@@ -60,194 +60,6 @@ st.set_page_config(
 
 st.logo("assets/logo.png", size="medium")
 
-# --- MINIMALIST AESTHETIC STYLING (ZERO GLOW & COMPACT LAYOUT) ---
-st.html("""
-<style>
-    /* Absolute Zero Glow Invariant */
-    *, *::before, *::after {
-        box-shadow: none !important;
-        text-shadow: none !important;
-        filter: none !important;
-    }
-
-    /* Base page styling */
-    .stApp {
-        background-color: #09090b;
-        color: #f4f4f5;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    /* Compact Headings */
-    h1 {
-        font-size: 1.55rem !important;
-        font-weight: 600 !important;
-        color: #fafafa !important;
-        letter-spacing: -0.02em;
-        margin: 0 0 0.2rem 0 !important;
-    }
-    h2 {
-        font-size: 1.25rem !important;
-        font-weight: 600 !important;
-        color: #fafafa !important;
-        letter-spacing: -0.02em;
-        margin: 0 0 0.2rem 0 !important;
-    }
-    h3 {
-        font-size: 1.05rem !important;
-        font-weight: 600 !important;
-        color: #fafafa !important;
-        margin: 0 0 0.2rem 0 !important;
-    }
-    h4, h5, h6 {
-        font-size: 0.92rem !important;
-        font-weight: 600 !important;
-        color: #fafafa !important;
-        margin: 0 0 0.15rem 0 !important;
-    }
-    p {
-        margin-bottom: 0.3rem !important;
-        font-size: 0.88rem !important;
-    }
-
-    /* Compact Block Spacing */
-    div[data-testid="stVerticalBlock"] {
-        gap: 0.55rem !important;
-    }
-    div[data-testid="stHorizontalBlock"] {
-        gap: 0.55rem !important;
-    }
-
-    /* Clean Card Containers */
-    div[data-testid="stVerticalBlockBorderWrapper"] > div {
-        border-color: #27272a !important;
-        border-radius: 6px !important;
-        background-color: #111114 !important;
-        padding: 10px 14px !important;
-    }
-
-    /* Minimal Native Metrics */
-    div[data-testid="stMetric"] {
-        padding: 2px 0 !important;
-    }
-    div[data-testid="stMetricValue"] {
-        font-size: 1.4rem !important;
-        font-weight: 600 !important;
-        color: #38bdf8 !important;
-        letter-spacing: -0.02em;
-        line-height: 1.2 !important;
-    }
-    div[data-testid="stMetricLabel"] {
-        font-size: 0.72rem !important;
-        font-weight: 500 !important;
-        color: #a1a1aa !important;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    /* Restrained Buttons - Clean, Crisp, Flat */
-    .stButton > button {
-        border-radius: 6px !important;
-        font-weight: 500 !important;
-        font-size: 0.86rem !important;
-        border: 1px solid #3f3f46 !important;
-        background-color: #18181b !important;
-        color: #f4f4f5 !important;
-        padding: 4px 14px !important;
-        min-height: 36px !important;
-        transition: background-color 0.12s ease, border-color 0.12s ease !important;
-    }
-    .stButton > button:hover {
-        border-color: #71717a !important;
-        background-color: #27272a !important;
-    }
-    .stButton > button[kind="primary"] {
-        background-color: #2563eb !important;
-        border-color: #2563eb !important;
-        color: #ffffff !important;
-    }
-    .stButton > button[kind="primary"]:hover {
-        background-color: #1d4ed8 !important;
-        border-color: #1d4ed8 !important;
-    }
-
-    /* Clean Modern Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 4px;
-        border-bottom: 1px solid #27272a;
-        padding-bottom: 2px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 34px;
-        border-radius: 6px;
-        padding: 0 14px;
-        font-weight: 500;
-        font-size: 0.85rem;
-        color: #a1a1aa;
-        border: 1px solid transparent;
-        background: transparent;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #fafafa !important;
-        background: #18181b !important;
-        border-color: #3f3f46 !important;
-    }
-    .stTabs [data-baseweb="tab-highlight"] {
-        display: none !important;
-    }
-
-    /* Compact Checkboxes */
-    div[data-testid="stCheckbox"] {
-        margin-bottom: 2px !important;
-        padding-top: 1px !important;
-        padding-bottom: 1px !important;
-    }
-    div[data-testid="stCheckbox"] label span {
-        font-size: 0.82rem !important;
-    }
-
-    /* Compact Priority Item */
-    .priority-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background-color: #131316;
-        border: 1px solid #27272a;
-        border-radius: 6px;
-        padding: 8px 12px;
-        margin-bottom: 6px;
-        font-size: 0.86rem;
-        color: #e4e4e7;
-        line-height: 1.35;
-    }
-    .priority-badge {
-        display: inline-block;
-        background-color: #1e293b;
-        color: #38bdf8;
-        border: 1px solid #334155;
-        border-radius: 4px;
-        padding: 1px 7px;
-        font-size: 0.70rem;
-        font-weight: 600;
-        letter-spacing: 0.03em;
-        white-space: nowrap;
-    }
-    .priority-text {
-        flex: 1;
-    }
-
-    /* Clean Inputs */
-    input, textarea, select {
-        border-radius: 6px !important;
-        font-size: 0.88rem !important;
-    }
-
-    /* Progress Bar */
-    div[data-testid="stProgress"] > div > div > div > div {
-        background-color: #2563eb !important;
-    }
-</style>
-""")
-
 # --- STATE INITIALIZATION ---
 if "profiles" not in st.session_state:
     st.session_state.profiles = None
@@ -503,67 +315,63 @@ with tab_player:
 
     # STEP 2 & 3: PROFILE SELECTION & CATEGORY CONFIGURATION
     if st.session_state.profiles:
-        st.markdown("**:material/tune: Profile & Extraction Scope**")
+        st.subheader("Profile and datasets")
 
-        col_profile, col_categories = st.columns(2)
+        with st.container(border=True):
+            st.subheader("Target profile")
+            st.caption("Select the SkyBlock profile to analyze and export.")
 
-        with col_profile:
-            with st.container(border=True):
-                st.markdown("##### Target Profile")
-                st.caption("Select the SkyBlock profile to analyze and export.")
-
-                profile_choices = {}
-                for p in st.session_state.profiles:
-                    last_save_fmt = (
-                        datetime.fromtimestamp(p["last_save"] / 1000).strftime("%Y-%m-%d %H:%M")
-                        if p["last_save"] > 0
-                        else "Never"
-                    )
-                    mode_tag = f"[{p['game_mode'].upper()}]" if p["game_mode"] != "normal" else ""
-                    label = f"{p['name']} {mode_tag} - Last Save: {last_save_fmt}".strip()
-                    profile_choices[label] = p
-
-                selected_label = st.radio(
-                    "Target Profile",
-                    options=list(profile_choices.keys()),
-                    index=0,
-                    label_visibility="collapsed",
+            profile_choices = {}
+            for p in st.session_state.profiles:
+                last_save_fmt = (
+                    datetime.fromtimestamp(p["last_save"] / 1000).strftime("%Y-%m-%d %H:%M")
+                    if p["last_save"] > 0
+                    else "Never"
                 )
-                target_profile = profile_choices[selected_label]
+                mode_tag = f"[{p['game_mode'].upper()}]" if p["game_mode"] != "normal" else ""
+                label = f"{p['name']} {mode_tag} - Last Save: {last_save_fmt}".strip()
+                profile_choices[label] = p
 
-                # Profile metadata summary
-                last_save_val = (
-                    datetime.fromtimestamp(target_profile["last_save"] / 1000).strftime("%Y-%m-%d %H:%M:%S")
-                    if target_profile["last_save"] > 0
-                    else "Never recorded"
-                )
-                c_p1, c_p2 = st.columns(2)
-                with c_p1:
-                    st.caption(f"**Mode:** {target_profile['game_mode'].capitalize()}")
-                    st.caption(f"**Profile ID:** `{target_profile['profile_id'][:8]}...`")
-                with c_p2:
-                    st.caption(f"**Last Save:** {last_save_val}")
-                    st.caption(f"**Profile Name:** {target_profile['name']}")
+            selected_label = st.radio(
+                "Target Profile",
+                options=list(profile_choices.keys()),
+                index=0,
+                label_visibility="collapsed",
+            )
+            target_profile = profile_choices[selected_label]
 
-        with col_categories:
-            with st.container(border=True):
-                st.markdown("##### Extraction Datasets")
-                st.caption("Choose which categories to query.")
-                c_cat1, c_cat2 = st.columns(2)
-                with c_cat1:
-                    chk_profile = st.checkbox("Complete Profile", value=True, disabled=True, help="Inventories, skills, slayers, dungeons")
-                    chk_player = st.checkbox("Player Stats", value=True, help="Overall player stats & minigame achievements")
-                    chk_garden = st.checkbox("Garden & Farming", value=True, help="Plots, crops, milestones, visitors")
-                    chk_museum = st.checkbox("Museum Collection", value=True, help="Donated weapons, armor, appraisals")
-                    chk_guild = st.checkbox("Guild Membership", value=True, help="Guild level, members, exp")
-                    chk_bazaar = st.checkbox("Bazaar Snapshot", value=True, help="Live buy/sell market snapshot")
-                with c_cat2:
-                    chk_auction = st.checkbox("Profile Auctions", value=True, help="Active & ended player auctions")
-                    chk_news = st.checkbox("In-Game News", value=False, help="Recent SkyBlock maintenance/update news")
-                    chk_firesales = st.checkbox("Fire Sales", value=False, help="Active cosmetic fire sales")
-                    chk_items = st.checkbox("Items Schema", value=True, help="Official item definitions (Public)")
-                    chk_skills_res = st.checkbox("Skills Schema", value=False, help="Official skill formulas (Public)")
-                    chk_colls_res = st.checkbox("Collections Schema", value=False, help="Official collection milestones (Public)")
+            # Profile metadata summary
+            last_save_val = (
+                datetime.fromtimestamp(target_profile["last_save"] / 1000).strftime("%Y-%m-%d %H:%M:%S")
+                if target_profile["last_save"] > 0
+                else "Never recorded"
+            )
+            c_p1, c_p2 = st.columns(2)
+            with c_p1:
+                st.caption(f"**Mode:** {target_profile['game_mode'].capitalize()}")
+                st.caption(f"**Profile ID:** `{target_profile['profile_id'][:8]}...`")
+            with c_p2:
+                st.caption(f"**Last Save:** {last_save_val}")
+                st.caption(f"**Profile Name:** {target_profile['name']}")
+
+        with st.container(border=True):
+            st.subheader("Datasets to include")
+            st.caption("Choose which categories to query.")
+            c_cat1, c_cat2 = st.columns(2)
+            with c_cat1:
+                chk_profile = st.checkbox("Complete Profile", value=True, disabled=True, help="Inventories, skills, slayers, dungeons")
+                chk_player = st.checkbox("Player Stats", value=True, help="Overall player stats & minigame achievements")
+                chk_garden = st.checkbox("Garden & Farming", value=True, help="Plots, crops, milestones, visitors")
+                chk_museum = st.checkbox("Museum Collection", value=True, help="Donated weapons, armor, appraisals")
+                chk_guild = st.checkbox("Guild Membership", value=True, help="Guild level, members, exp")
+                chk_bazaar = st.checkbox("Bazaar Snapshot", value=True, help="Live buy/sell market snapshot")
+            with c_cat2:
+                chk_auction = st.checkbox("Profile Auctions", value=True, help="Active & ended player auctions")
+                chk_news = st.checkbox("In-Game News", value=False, help="Recent SkyBlock maintenance/update news")
+                chk_firesales = st.checkbox("Fire Sales", value=False, help="Active cosmetic fire sales")
+                chk_items = st.checkbox("Items Schema", value=True, help="Official item definitions (Public)")
+                chk_skills_res = st.checkbox("Skills Schema", value=False, help="Official skill formulas (Public)")
+                chk_colls_res = st.checkbox("Collections Schema", value=False, help="Official collection milestones (Public)")
 
         selected_categories = ["profile"]
         if chk_player: selected_categories.append("player")
@@ -651,7 +459,7 @@ with tab_player:
 
     # STEP 5: RESULTS & DOWNLOADS
     if st.session_state.extraction_results:
-        st.markdown("**:material/analytics: Extraction Summary & Analytics**")
+        st.subheader("Results and analytics")
 
         results = st.session_state.extraction_results
         outcome = st.session_state.get("extraction_outcome", classify_extraction_outcome(results))
@@ -727,17 +535,13 @@ with tab_player:
             ])
 
             with tab_priorities:
-                st.markdown("**:material/checklist: Rule-Based Progression Recommendations**")
+                st.subheader("Recommended next steps")
                 priorities = summary.get("progression_priorities", [])
                 if priorities:
                     for idx, item in enumerate(priorities, 1):
-                        st.markdown(
-                            f"""<div class="priority-item">
-                                <span class="priority-badge">Priority {idx}</span>
-                                <span class="priority-text">{item}</span>
-                            </div>""",
-                            unsafe_allow_html=True,
-                        )
+                        with st.container(border=True):
+                            st.caption(f"Priority {idx}")
+                            st.markdown(item)
                 else:
                     st.info("No specific progression recommendations generated for this profile.", icon=":material/info:")
 
