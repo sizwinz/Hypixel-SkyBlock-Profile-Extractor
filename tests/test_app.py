@@ -5,6 +5,29 @@ from streamlit.testing.v1 import AppTest
 APP_PATH = str(Path(__file__).resolve().parent.parent / "app.py")
 
 
+def test_player_lookup_batches_username_until_submit(monkeypatch):
+    from unittest.mock import Mock
+    from skyblock_extractor.api_client import HypixelAPIClient
+
+    monkeypatch.setenv("HYPIXEL_API_KEY", "test-key")
+    resolve_player = Mock(return_value=("player-uuid", "playeruuid"))
+    fetch_profiles = Mock(return_value=[])
+    monkeypatch.setattr(HypixelAPIClient, "get_player_uuid", resolve_player)
+    monkeypatch.setattr(HypixelAPIClient, "get_skyblock_profiles", fetch_profiles)
+
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+    lookup = app.get("form")
+    assert len(lookup) == 1, "Player lookup should be one submit-based form"
+    username = lookup[0].text_input[0]
+    username.set_value("  TestPlayer  ")
+    resolve_player.assert_not_called()
+    lookup[0].button[0].click().run()
+
+    resolve_player.assert_called_once_with("TestPlayer")
+    fetch_profiles.assert_called_once_with("player-uuid")
+    assert not app.exception
+
+
 def test_app_hosted_mode_omits_api_key_input(monkeypatch):
     monkeypatch.setenv("STREAMLIT_HOSTED", "true")
     monkeypatch.delenv("HYPIXEL_API_KEY", raising=False)
