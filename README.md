@@ -1,15 +1,27 @@
-# SkyBlock Profile Extractor
+<div align="center">
 
-<p align="center">
-  <img src="assets/logo.png" alt="SkyBlock Profile Extractor Logo" width="160"/>
-</p>
+<table border="0" cellpadding="16">
+  <tr>
+    <td align="center" width="200">
+      <img src="assets/logo.png" alt="SkyBlock Profile Extractor Logo" width="160" />
+    </td>
+    <td align="center">
+      <h1 style="border: none; margin-bottom: 10px;">SkyBlock Profile Extractor</h1>
+      <p><b>On-demand Hypixel SkyBlock profile data extraction and progression analysis.</b></p>
+      <p>Export character data, inventory states, and progression metrics into structured JSON backups via the official Hypixel API v2.</p>
+      <a href="https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor/actions/workflows/tests.yml"><img src="https://img.shields.io/github/actions/workflow/status/sizwinz/Hypixel-SkyBlock-Profile-Extractor/tests.yml?branch=main&style=flat-square&logo=github&label=build" alt="Build" /></a>
+      <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.9%20--%203.12-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.9 - 3.12" /></a>
+      <a href="https://streamlit.io/"><img src="https://img.shields.io/badge/Streamlit-1.30%2B-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" alt="Streamlit" /></a>
+      <a href="https://developer.hypixel.net/"><img src="https://img.shields.io/badge/Hypixel%20API-v2%20Compliant-22C55E?style=flat-square" alt="Hypixel API v2 Compliant" /></a>
+      <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22C55E?style=flat-square" alt="MIT License" /></a>
+      <a href="https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor/releases"><img src="https://img.shields.io/badge/release-v2.1.0-0078D4?style=flat-square" alt="Release v2.1.0" /></a>
+      <br><br>
+      <a href="#usage"><img src="https://img.shields.io/badge/LAUNCH-WEB%20APP-2563EB?style=for-the-badge&logo=streamlit&logoColor=white" alt="Launch Web App" /></a>
+    </td>
+  </tr>
+</table>
 
-[![Python Version](https://img.shields.io/badge/Python-3.9%20--%203.12-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Hypixel API v2](https://img.shields.io/badge/Hypixel%20API-v2%20Compliant-green.svg)](https://developer.hypixel.net/)
-[![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)](#automated-testing)
-
-An open-source, on-demand data extraction utility and progression analyzer for Hypixel SkyBlock. Designed for personal character backups, progression tracking, and structured dataset export via the official Hypixel API v2.
+<br>
 
 <p align="center">
   <a href="assets/dashboard.png">
@@ -18,6 +30,10 @@ An open-source, on-demand data extraction utility and progression analyzer for H
   <br/>
   <sub>SkyBlock Profile Extractor interactive dashboard: lookup profiles, select datasets, inspect live progression metrics, and download complete archives. Click to view full size.</sub>
 </p>
+
+<br><br>
+
+</div>
 
 ---
 
