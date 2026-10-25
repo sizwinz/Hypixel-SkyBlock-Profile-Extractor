@@ -26,7 +26,8 @@ def test_profile_results_live_in_their_own_top_level_tab():
     backup = next(tab for tab in app.tabs if "Player Profile Backup" in tab.label)
     assert not backup.metric
     assert results.metric[0].value == "25"
-    assert [tab.label for tab in results.tabs] == [
+    # Older AppTest versions include the parent tab in this collection.
+    assert [tab.label for tab in results.tabs if tab.label != results.label] == [
         ":material/checklist: Progression Priorities",
         ":material/network_check: Endpoint Status",
         ":material/code: File Previews",
