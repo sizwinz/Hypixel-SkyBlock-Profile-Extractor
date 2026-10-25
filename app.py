@@ -543,22 +543,10 @@ with tab_results:
         outcome = st.session_state.get("extraction_outcome", classify_extraction_outcome(results))
         summary = st.session_state.summary
 
-        tab_priorities, tab_endpoints, tab_files = st.tabs([
-            ":material/checklist: Progression Priorities",
+        tab_endpoints, tab_files = st.tabs([
             ":material/network_check: Endpoint Status",
             ":material/code: File Previews",
         ])
-
-        with tab_priorities:
-            st.subheader("Recommended next steps")
-            if summary:
-                priorities = summary.get("progression_priorities", [])
-                for idx, item in enumerate(priorities, 1):
-                    with st.container(border=True):
-                        st.caption(f"Priority {idx}")
-                        st.markdown(item)
-            else:
-                st.info("No progression recommendations available.", icon=":material/info:")
 
         with tab_endpoints:
             st.markdown("**:material/network_check: Endpoint Extraction Status**")
