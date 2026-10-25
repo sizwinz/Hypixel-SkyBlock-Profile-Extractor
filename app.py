@@ -240,8 +240,9 @@ with c_badge:
     else:
         st.badge("Local Desktop", icon=":material/computer:", color="green")
 
-tab_player, tab_public = st.tabs([
+tab_player, tab_results, tab_public = st.tabs([
     ":material/person: Player Profile Backup",
+    ":material/analytics: Profile results",
     ":material/database: Public Game Resources",
 ])
 
@@ -457,6 +458,10 @@ with tab_player:
                         progress_bar.progress(100, text=f"Partial extraction completed: {outcome['success_count']} of {outcome['total_count']} datasets acquired.")
                         st.warning(f"Partial extraction: {outcome['success_count']} of {outcome['total_count']} datasets acquired. Some endpoints failed.", icon=":material/warning:")
 
+    if st.session_state.extraction_results:
+        st.caption("Open the Profile results tab to review your extraction and download the archive.")
+
+with tab_results:
     # STEP 5: RESULTS & DOWNLOADS
     if st.session_state.extraction_results:
         st.subheader("Results and analytics")
@@ -567,6 +572,8 @@ with tab_player:
                 )
                 if preview_category and results[preview_category].data is not None:
                     st.json(results[preview_category].data, expanded=False)
+    else:
+        st.info("Extract a profile in the Player Profile Backup tab to see metrics, recommendations, endpoint status, and file previews here.", icon=":material/analytics:")
 
 with tab_public:
     with st.container(border=True):
