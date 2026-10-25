@@ -23,16 +23,14 @@ def test_profile_results_live_in_their_own_top_level_tab():
     app.run()
 
     results = next(tab for tab in app.tabs if "Profile results" in tab.label)
-    backup = next(tab for tab in app.tabs if "Player Profile Backup" in tab.label)
-    assert not backup.metric
-    assert results.metric[0].value == "25"
+    lookup = next(tab for tab in app.tabs if "Player Lookup" in tab.label or "Player Profile Backup" in tab.label)
+    assert lookup.metric[0].value == "25"
     # Older AppTest versions include the parent tab in this collection.
     assert [tab.label for tab in results.tabs if tab.label != results.label] == [
-        ":material/checklist: Progression Priorities",
         ":material/network_check: Endpoint Status",
         ":material/code: File Previews",
     ]
-    assert any(item.value == "Raise your farming skill." for item in results.markdown)
+    assert any(item.value == "Raise your farming skill." for item in lookup.markdown)
     assert not app.exception
 
 
@@ -78,6 +76,36 @@ def test_app_hosted_mode_omits_api_key_input(monkeypatch):
     # Under hosted mode, personal API key input must NOT exist
     labels = [t.label for t in app.text_input]
     assert "Hypixel API Key" not in labels
+    assert not app.exception
+
+
+def test_player_lookup_omits_redundant_cloud_banner_in_hosted_mode(monkeypatch):
+    monkeypatch.setenv("STREAMLIT_HOSTED", "true")
+    monkeypatch.delenv("HYPIXEL_API_KEY", raising=False)
+
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+    player_tab = next(tab for tab in app.tabs if "Player Lookup" in tab.label)
+    assert not any("Streamlit Community Cloud Deployment" in info.value for info in player_tab.info)
+    assert not app.exception
+
+
+def test_target_profile_card_metadata_omits_duplicate_profile_name():
+    app = AppTest.from_file(APP_PATH, default_timeout=15)
+    app.session_state.profiles = [
+        {
+            "id": "abc1234567890",
+            "name": "Tomato",
+            "game_mode": "normal",
+            "last_save": 1700000000000,
+            "selected": True,
+        }
+    ]
+    app.run()
+
+    captions = [c.value for c in app.caption]
+    assert any("**Mode:** Normal" in c for c in captions)
+    assert any("**Profile ID:**" in c for c in captions)
+    assert not any("**Profile Name:**" in c for c in captions)
     assert not app.exception
 
 

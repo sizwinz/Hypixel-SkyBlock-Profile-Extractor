@@ -38,6 +38,13 @@ from skyblock_extractor.exporter import ProfileExporter, PublicResourceExporter
 APP_VERSION = "2.1.0"
 
 
+def format_timestamp(ms: Optional[int], fmt: str = "%Y-%m-%d %H:%M") -> str:
+    """Safely format millisecond epoch timestamps."""
+    if not ms or ms <= 0:
+        return "Never"
+    return datetime.fromtimestamp(ms / 1000).strftime(fmt)
+
+
 def resolve_server_api_key() -> str:
     """Resolve pre-configured server API key from environment or Streamlit secrets."""
     key = os.environ.get("HYPIXEL_API_KEY", "").strip()
@@ -231,7 +238,7 @@ with st.sidebar:
 c_title, c_badge = st.columns([4, 1], vertical_alignment="center")
 with c_title:
     st.title("SkyBlock Profile Extractor")
-    st.markdown("Export raw Hypixel SkyBlock profile data and deterministic progression analytics for personal analysis.")
+    st.markdown("Export raw Hypixel SkyBlock profile data and progression insights.")
 with c_badge:
     if streamlit_cloud_mode:
         st.badge("Streamlit Cloud", icon=":material/cloud:", color="blue")
@@ -241,123 +248,113 @@ with c_badge:
         st.badge("Local Desktop", icon=":material/computer:", color="green")
 
 tab_player, tab_results, tab_public = st.tabs([
-    ":material/person: Player Profile Backup",
+    ":material/person: Player Lookup",
     ":material/analytics: Profile results",
     ":material/database: Public Game Resources",
 ])
 
 with tab_player:
-    if (streamlit_cloud_mode or hosted_mode) and not effective_key:
-        st.info(
-            "Streamlit Community Cloud Deployment: In compliance with Hypixel Developer Policies, personal API keys are not collected "
-            "through web forms on public hosted sites. You can extract official public datasets (Items, Skills, Collections) under the "
-            "Public Game Resources tab, or deploy your own private copy to Streamlit Cloud / run locally for private player profile exports.",
-            icon=":material/cloud:",
-        )
+    col_input, col_analytics = st.columns([1, 1], gap="medium")
 
-    # STEP 1: USERNAME INPUT
-    with st.form("player_lookup", border=True):
-        st.markdown("**:material/person_search: Player lookup**")
-        c_input, c_btn = st.columns([4, 1], vertical_alignment="bottom")
-        with c_input:
-            input_username = st.text_input(
-                "Minecraft username",
-                placeholder="e.g. Technoblade",
-                label_visibility="visible",
-            )
-        with c_btn:
-            find_btn = st.form_submit_button("Find profiles", icon=":material/search:", width="stretch", type="primary")
-
-    # Keep the current results until a different player search is submitted.
-    if find_btn and input_username.strip() != st.session_state.last_queried_username:
-        st.session_state.profiles = None
-        st.session_state.extraction_results = None
-        st.session_state.summary = None
-        st.session_state.zip_buffer = None
-
-    if find_btn:
-        if not input_username.strip():
-            st.warning("Please enter a Minecraft username.", icon=":material/warning:")
-        elif not effective_key:
-            st.warning("Please provide a Hypixel API key in the sidebar. On hosted deployments, use the Public Game Resources tab or run locally.", icon=":material/warning:")
-        else:
-            st.session_state.last_queried_username = input_username.strip()
-            client = HypixelAPIClient(api_key=effective_key)
-            
-            with st.spinner("Resolving player and fetching profiles..."):
-                try:
-                    dashed_uuid, raw_uuid = client.get_player_uuid(input_username.strip())
-                    st.session_state.player_uuid = dashed_uuid
-                    st.session_state.player_username = input_username.strip()
-
-                    raw_profiles = client.get_skyblock_profiles(dashed_uuid)
-                    if not raw_profiles:
-                        st.error("No SkyBlock profiles found for this account.", icon=":material/error:")
-                        st.session_state.profiles = None
-                    else:
-                        normalized = normalize_profiles(raw_profiles, dashed_uuid)
-                        st.session_state.profiles = normalized
-                        st.session_state.extraction_results = None
-                        st.session_state.summary = None
-                        st.session_state.zip_buffer = None
-                        st.success(f"Found {len(normalized)} profile(s) for {input_username.strip()}.", icon=":material/check_circle:")
-                except PlayerNotFoundError as e:
-                    st.error(f"Player resolution error: {e}", icon=":material/error:")
-                    st.session_state.profiles = None
-                except AuthenticationError as e:
-                    st.error(f"Authentication error: {e}", icon=":material/error:")
-                    st.session_state.profiles = None
-                except RateLimitExceededError as e:
-                    st.error(f"Rate limit exceeded: {e}", icon=":material/error:")
-                    st.session_state.profiles = None
-                except SkyBlockExtractorError as e:
-                    st.error(f"API Error: {e}", icon=":material/error:")
-                    st.session_state.profiles = None
-
-    # STEP 2 & 3: PROFILE SELECTION & CATEGORY CONFIGURATION
-    if st.session_state.profiles:
-        st.subheader("Profile and datasets")
-
+    with col_input:
+        # CARD 1: PLAYER LOOKUP
         with st.container(border=True):
-            st.subheader("Target profile")
-            st.caption("Select the SkyBlock profile to analyze and export.")
+            st.subheader("Player lookup", icon=":material/person:")
+            with st.form("player_lookup", border=False):
+                st.caption("Minecraft username")
+                c_in, c_btn = st.columns([3, 1.3], vertical_alignment="bottom")
+                with c_in:
+                    input_username = st.text_input(
+                        "Minecraft username",
+                        value=st.session_state.player_username or "",
+                        placeholder="e.g. SizWinz",
+                        label_visibility="collapsed",
+                    )
+                with c_btn:
+                    find_btn = st.form_submit_button(
+                        "Find profiles",
+                        icon=":material/search:",
+                        type="primary",
+                        width="stretch",
+                    )
 
-            profile_choices = {}
-            for p in st.session_state.profiles:
-                last_save_fmt = (
-                    datetime.fromtimestamp(p["last_save"] / 1000).strftime("%Y-%m-%d %H:%M")
-                    if p["last_save"] > 0
-                    else "Never"
+            if find_btn and input_username.strip() != st.session_state.last_queried_username:
+                st.session_state.profiles = None
+                st.session_state.extraction_results = None
+                st.session_state.summary = None
+                st.session_state.zip_buffer = None
+
+            if find_btn:
+                if not input_username.strip():
+                    st.warning("Please enter a Minecraft username.", icon=":material/warning:")
+                elif not effective_key:
+                    st.warning("Please provide a Hypixel API key in the sidebar. On hosted deployments, use the Public Game Resources tab or run locally.", icon=":material/warning:")
+                else:
+                    st.session_state.last_queried_username = input_username.strip()
+                    client = HypixelAPIClient(api_key=effective_key)
+                    with st.spinner("Resolving player and fetching profiles..."):
+                        try:
+                            dashed_uuid, raw_uuid = client.get_player_uuid(input_username.strip())
+                            st.session_state.player_uuid = dashed_uuid
+                            st.session_state.player_username = input_username.strip()
+
+                            raw_profiles = client.get_skyblock_profiles(dashed_uuid)
+                            if not raw_profiles:
+                                st.error("No SkyBlock profiles found for this account.", icon=":material/error:")
+                                st.session_state.profiles = None
+                            else:
+                                normalized = normalize_profiles(raw_profiles, dashed_uuid)
+                                st.session_state.profiles = normalized
+                                st.session_state.extraction_results = None
+                                st.session_state.summary = None
+                                st.session_state.zip_buffer = None
+                                st.success(f"Found {len(normalized)} profile(s) for {input_username.strip()}.", icon=":material/check_circle:")
+                        except PlayerNotFoundError as e:
+                            st.error(f"Player resolution error: {e}", icon=":material/error:")
+                            st.session_state.profiles = None
+                        except AuthenticationError as e:
+                            st.error(f"Authentication error: {e}", icon=":material/error:")
+                            st.session_state.profiles = None
+                        except RateLimitExceededError as e:
+                            st.error(f"Rate limit exceeded: {e}", icon=":material/error:")
+                            st.session_state.profiles = None
+                        except SkyBlockExtractorError as e:
+                            st.error(f"API Error: {e}", icon=":material/error:")
+                            st.session_state.profiles = None
+
+        # CARD 2: TARGET PROFILE
+        with st.container(border=True):
+            st.subheader("Target profile", icon=":material/track_changes:")
+            if st.session_state.profiles:
+                profile_choices = {}
+                for p in st.session_state.profiles:
+                    last_save_fmt = format_timestamp(p.get("last_save"))
+                    mode_tag = f"[{p['game_mode'].upper()}]" if p["game_mode"] != "normal" else ""
+                    label = f"{p['name']} {mode_tag} - Last Save: {last_save_fmt}".strip()
+                    profile_choices[label] = p
+
+                selected_label = st.radio(
+                    "Target profile",
+                    options=list(profile_choices.keys()),
+                    index=0,
+                    label_visibility="collapsed",
                 )
-                mode_tag = f"[{p['game_mode'].upper()}]" if p["game_mode"] != "normal" else ""
-                label = f"{p['name']} {mode_tag} - Last Save: {last_save_fmt}".strip()
-                profile_choices[label] = p
+                target_profile = profile_choices[selected_label]
 
-            selected_label = st.radio(
-                "Target Profile",
-                options=list(profile_choices.keys()),
-                index=0,
-                label_visibility="collapsed",
-            )
-            target_profile = profile_choices[selected_label]
+                c_m1, c_m2 = st.columns(2)
+                with c_m1:
+                    st.caption(f"**Mode:** {target_profile['game_mode'].capitalize()}")
+                with c_m2:
+                    pid_raw = target_profile.get("id", "")
+                    pid_snippet = pid_raw[:8] + "..." if len(pid_raw) > 12 else (pid_raw or "N/A")
+                    st.caption(f"**Profile ID:** `{pid_snippet}`")
+            else:
+                target_profile = None
+                st.caption("Search for a player above to choose a SkyBlock profile.")
 
-            # Profile metadata summary
-            last_save_val = (
-                datetime.fromtimestamp(target_profile["last_save"] / 1000).strftime("%Y-%m-%d %H:%M:%S")
-                if target_profile["last_save"] > 0
-                else "Never recorded"
-            )
-            c_p1, c_p2 = st.columns(2)
-            with c_p1:
-                st.caption(f"**Mode:** {target_profile['game_mode'].capitalize()}")
-                st.caption(f"**Profile ID:** `{target_profile['profile_id'][:8]}...`")
-            with c_p2:
-                st.caption(f"**Last Save:** {last_save_val}")
-                st.caption(f"**Profile Name:** {target_profile['name']}")
-
+        # CARD 3: DATASETS TO INCLUDE
         with st.container(border=True):
-            st.subheader("Datasets to include")
-            st.caption("Choose which categories to query.")
+            st.subheader("Datasets to include", icon=":material/layers:")
             c_cat1, c_cat2 = st.columns(2)
             with c_cat1:
                 chk_profile = st.checkbox("Complete Profile", value=True, disabled=True, help="Inventories, skills, slayers, dungeons")
@@ -374,206 +371,202 @@ with tab_player:
                 chk_skills_res = st.checkbox("Skills Schema", value=False, help="Official skill formulas (Public)")
                 chk_colls_res = st.checkbox("Collections Schema", value=False, help="Official collection milestones (Public)")
 
-        selected_categories = ["profile"]
-        if chk_player: selected_categories.append("player")
-        if chk_garden: selected_categories.append("garden")
-        if chk_museum: selected_categories.append("museum")
-        if chk_guild: selected_categories.append("guild")
-        if chk_bazaar: selected_categories.append("bazaar")
-        if chk_auction: selected_categories.append("auction")
-        if chk_news: selected_categories.append("news")
-        if chk_firesales: selected_categories.append("firesales")
-        if chk_items: selected_categories.append("items")
-        if chk_skills_res: selected_categories.append("skills_resource")
-        if chk_colls_res: selected_categories.append("collections_resource")
+            selected_categories = ["profile"]
+            if chk_player: selected_categories.append("player")
+            if chk_garden: selected_categories.append("garden")
+            if chk_museum: selected_categories.append("museum")
+            if chk_guild: selected_categories.append("guild")
+            if chk_bazaar: selected_categories.append("bazaar")
+            if chk_auction: selected_categories.append("auction")
+            if chk_news: selected_categories.append("news")
+            if chk_firesales: selected_categories.append("firesales")
+            if chk_items: selected_categories.append("items")
+            if chk_skills_res: selected_categories.append("skills_resource")
+            if chk_colls_res: selected_categories.append("collections_resource")
 
-        # STEP 4: EXTRACTION TRIGGER
-        if st.button("Start Extraction", icon=":material/download:", type="primary", width="stretch"):
-            client = HypixelAPIClient(api_key=effective_key)
-            progress_bar = st.progress(0, text="Initializing extraction pipeline...")
-            status_text = st.empty()
+            start_btn = st.button(
+                "Start Extraction",
+                icon=":material/download:",
+                type="primary",
+                width="stretch",
+                disabled=not bool(target_profile),
+            )
 
-            def update_progress(step: int, total: int, category: str, status: str):
-                pct = int((step / total) * 100)
-                progress_bar.progress(pct, text=f"Fetching category: {category} ({step}/{total})")
+            if start_btn and target_profile:
+                client = HypixelAPIClient(api_key=effective_key)
+                progress_bar = st.progress(0, text="Initializing extraction pipeline...")
 
-            extractor = ProfileExtractor(client=client, progress_callback=update_progress)
+                def update_progress(step: int, total: int, category: str, status: str):
+                    pct = int((step / total) * 100)
+                    progress_bar.progress(pct, text=f"Fetching category: {category} ({step}/{total})")
 
-            with st.spinner("Extracting datasets from Hypixel API v2..."):
-                results = extractor.extract(
-                    player_uuid=st.session_state.player_uuid,
-                    profile=target_profile,
-                    categories=selected_categories,
-                )
-
-                outcome = classify_extraction_outcome(results)
-                st.session_state.extraction_results = results
-                st.session_state.extraction_outcome = outcome
-
-                if outcome["status"] == "complete_failure":
-                    st.session_state.summary = None
-                    st.session_state.zip_buffer = None
-                    st.session_state.zip_filename = None
-                    progress_bar.progress(100, text="Extraction failed for all requested endpoints.")
-                    st.error("Extraction failed: None of the requested endpoints succeeded. Please verify API credentials and player privacy settings.", icon=":material/error:")
-                else:
-                    # Prioritize freshly extracted profile data if available
-                    fresh_profile_data = None
-                    if "profile" in results and results["profile"].status == "success" and results["profile"].data:
-                        fresh_profile_data = results["profile"].data
-
-                    profile_payload_for_analysis = fresh_profile_data or target_profile.get("data", target_profile)
-
-                    # Analyze progression
-                    analyzer = ProfileAnalyzer()
-                    auxiliary = {cat: res.data for cat, res in results.items() if res.status == "success" and res.data}
-                    summary = analyzer.analyze(
+                extractor = ProfileExtractor(client=client, progress_callback=update_progress)
+                with st.spinner("Extracting datasets from Hypixel API v2..."):
+                    results = extractor.extract(
                         player_uuid=st.session_state.player_uuid,
-                        profile_data=profile_payload_for_analysis,
-                        auxiliary_data=auxiliary,
+                        profile=target_profile,
+                        categories=selected_categories,
                     )
 
-                    # Build in-memory bundle
-                    exporter = ProfileExporter(
-                        username=st.session_state.player_username,
-                        player_uuid=st.session_state.player_uuid,
-                        profile_name=target_profile["name"],
-                        profile_id=target_profile["profile_id"],
-                        results=results,
-                        summary=summary,
-                    )
+                    outcome = classify_extraction_outcome(results)
+                    st.session_state.extraction_results = results
+                    st.session_state.extraction_outcome = outcome
 
-                    zip_buffer = exporter.build_zip_in_memory()
-                    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    zip_name = f"SkyBlock_{st.session_state.player_username}_{target_profile['name']}_{ts}.zip"
-
-                    st.session_state.summary = summary
-                    st.session_state.zip_buffer = zip_buffer
-                    st.session_state.zip_filename = zip_name
-
-                    if outcome["status"] == "complete_success":
-                        progress_bar.progress(100, text=f"Extraction completed: All {outcome['total_count']} datasets acquired.")
-                        st.success(f"All {outcome['total_count']} datasets successfully extracted.", icon=":material/check_circle:")
+                    if outcome["status"] == "complete_failure":
+                        st.session_state.summary = None
+                        st.session_state.zip_buffer = None
+                        st.session_state.zip_filename = None
+                        progress_bar.progress(100, text="Extraction failed for all requested endpoints.")
+                        st.error("Extraction failed: None of the requested endpoints succeeded. Please verify API credentials and player privacy settings.", icon=":material/error:")
                     else:
-                        progress_bar.progress(100, text=f"Partial extraction completed: {outcome['success_count']} of {outcome['total_count']} datasets acquired.")
-                        st.warning(f"Partial extraction: {outcome['success_count']} of {outcome['total_count']} datasets acquired. Some endpoints failed.", icon=":material/warning:")
+                        fresh_profile_data = None
+                        if "profile" in results and results["profile"].status == "success" and results["profile"].data:
+                            fresh_profile_data = results["profile"].data
 
-    if st.session_state.extraction_results:
-        st.caption("Open the Profile results tab to review your extraction and download the archive.")
+                        profile_payload_for_analysis = fresh_profile_data or target_profile.get("data", target_profile)
+
+                        analyzer = ProfileAnalyzer()
+                        auxiliary = {cat: res.data for cat, res in results.items() if res.status == "success" and res.data}
+                        summary = analyzer.analyze(
+                            player_uuid=st.session_state.player_uuid,
+                            profile_data=profile_payload_for_analysis,
+                            auxiliary_data=auxiliary,
+                        )
+
+                        exporter = ProfileExporter(
+                            username=st.session_state.player_username,
+                            player_uuid=st.session_state.player_uuid,
+                            profile_name=target_profile["name"],
+                            profile_id=target_profile["profile_id"],
+                            results=results,
+                            summary=summary,
+                        )
+
+                        zip_buffer = exporter.build_zip_in_memory()
+                        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        zip_name = f"SkyBlock_{st.session_state.player_username}_{target_profile['name']}_{ts}.zip"
+
+                        st.session_state.summary = summary
+                        st.session_state.zip_buffer = zip_buffer
+                        st.session_state.zip_filename = zip_name
+
+                        if outcome["status"] == "complete_success":
+                            progress_bar.progress(100, text=f"Extraction completed: All {outcome['total_count']} datasets acquired.")
+                            st.success(f"All {outcome['total_count']} datasets successfully extracted.", icon=":material/check_circle:")
+                        else:
+                            progress_bar.progress(100, text=f"Partial extraction completed: {outcome['success_count']} of {outcome['total_count']} datasets acquired.")
+                            st.warning(f"Partial extraction: {outcome['success_count']} of {outcome['total_count']} datasets acquired. Some endpoints failed.", icon=":material/warning:")
+
+    with col_analytics:
+        # CARD 4: RESULTS AND ANALYTICS (LIVE DASHBOARD)
+        with st.container(border=True):
+            st.subheader("Results and analytics", icon=":material/bar_chart:")
+            if st.session_state.extraction_results and st.session_state.summary:
+                summary = st.session_state.summary
+                outcome = st.session_state.get(
+                    "extraction_outcome",
+                    classify_extraction_outcome(st.session_state.extraction_results),
+                )
+                dungeons = summary.get("dungeons", {})
+                cata_val = (
+                    str(dungeons.get("catacombs_level"))
+                    if (dungeons.get("available") and dungeons.get("catacombs_level") is not None)
+                    else "N/A"
+                )
+                slayers = summary.get("slayer", {})
+                zombie_lvl = slayers.get("zombie", {}).get("level") if slayers.get("available") else None
+                zombie_val = f"Lvl {zombie_lvl}" if zombie_lvl is not None else "N/A"
+
+                m1, m2 = st.columns(2)
+                with m1:
+                    st.metric("Skill Average", str(summary.get("skill_average") or "N/A"), border=True)
+                with m2:
+                    st.metric("Catacombs Level", cata_val, border=True)
+
+                m3, m4 = st.columns(2)
+                with m3:
+                    st.metric("Zombie Slayer", zombie_val, border=True)
+                with m4:
+                    st.metric("Datasets Acquired", f"{outcome['success_count']} / {outcome['total_count']}", border=True)
+
+                if st.session_state.zip_buffer:
+                    st.download_button(
+                        label=f"Download Complete Archive ({st.session_state.zip_filename})",
+                        icon=":material/download:",
+                        data=st.session_state.zip_buffer.getvalue(),
+                        file_name=st.session_state.zip_filename,
+                        mime="application/zip",
+                        type="primary",
+                        width="stretch",
+                    )
+            else:
+                m1, m2 = st.columns(2)
+                with m1:
+                    st.metric("Skill Average", "--", border=True)
+                with m2:
+                    st.metric("Catacombs Level", "--", border=True)
+
+                m3, m4 = st.columns(2)
+                with m3:
+                    st.metric("Zombie Slayer", "--", border=True)
+                with m4:
+                    st.metric("Datasets Acquired", "--", border=True)
+
+                st.caption("Extract a profile to calculate progression metrics and download data.")
+
+        # CARD 5: RECOMMENDED NEXT STEPS
+        with st.container(border=True):
+            st.subheader("Recommended next steps", icon=":material/lightbulb:")
+            if st.session_state.summary:
+                priorities = st.session_state.summary.get("progression_priorities", [])
+                if priorities:
+                    for idx, item in enumerate(priorities, 1):
+                        with st.container(border=True):
+                            c_num, c_txt = st.columns([1, 14], vertical_alignment="center")
+                            with c_num:
+                                st.markdown(f"**:blue-badge[{idx}]**")
+                            with c_txt:
+                                st.markdown(item)
+                else:
+                    st.info("No specific progression recommendations generated for this profile.", icon=":material/info:")
+            else:
+                st.caption("Recommendations will be generated automatically based on your progression level.")
 
 with tab_results:
-    # STEP 5: RESULTS & DOWNLOADS
+    # DEEP-DIVE INSPECTION & RAW DATA EXPLORER
     if st.session_state.extraction_results:
-        st.subheader("Results and analytics")
-
+        st.subheader("Profile results and diagnostics", icon=":material/analytics:")
         results = st.session_state.extraction_results
         outcome = st.session_state.get("extraction_outcome", classify_extraction_outcome(results))
         summary = st.session_state.summary
 
-        if outcome["status"] == "complete_failure":
-            st.error("No datasets could be extracted. Review endpoint diagnostics below.", icon=":material/error:")
-            tab_endpoints, = st.tabs([":material/network_check: Endpoint Status & Diagnostics"])
-            with tab_endpoints:
-                status_rows = []
-                for cat, r in results.items():
-                    status_rows.append({
-                        "Category": r.description,
-                        "Filename": r.filename,
-                        "Status": r.status.upper(),
-                        "Details": r.error_message or "Failed to extract",
-                    })
-                st.table(status_rows)
-        elif summary:
-            # Highlight metrics with native bordered containers
-            m1, m2, m3, m4 = st.columns(4)
-            with m1:
-                st.metric(
-                    label="Skill Average",
-                    value=summary.get("skill_average") or "N/A",
-                    border=True,
-                    height="stretch",
-                )
-            with m2:
-                dungeons = summary.get("dungeons", {})
-                cata_val = dungeons.get("catacombs_level") if (dungeons.get("available") and dungeons.get("catacombs_level") is not None) else "N/A"
-                st.metric(
-                    label="Catacombs Level",
-                    value=cata_val,
-                    border=True,
-                    height="stretch",
-                )
-            with m3:
-                slayers = summary.get("slayer", {})
-                zombie_lvl = slayers.get("zombie", {}).get("level") if slayers.get("available") else None
-                zombie_val = f"Lvl {zombie_lvl}" if zombie_lvl is not None else "N/A"
-                st.metric(
-                    label="Zombie Slayer",
-                    value=zombie_val,
-                    border=True,
-                    height="stretch",
-                )
-            with m4:
-                st.metric(
-                    label="Datasets Acquired",
-                    value=f"{outcome['success_count']} / {outcome['total_count']}",
-                    border=True,
-                    height="stretch",
-                )
+        tab_endpoints, tab_files = st.tabs([
+            ":material/network_check: Endpoint Status",
+            ":material/code: File Previews",
+        ])
 
-            # Downloads section
-            if st.session_state.zip_buffer:
-                st.download_button(
-                    label=f"Download Complete Archive ({st.session_state.zip_filename})",
-                    icon=":material/download:",
-                    data=st.session_state.zip_buffer.getvalue(),
-                    file_name=st.session_state.zip_filename,
-                    mime="application/zip",
-                    type="primary",
-                    width="stretch",
-                )
+        with tab_endpoints:
+            st.markdown("**:material/network_check: Endpoint Extraction Status**")
+            status_rows = []
+            for cat, r in results.items():
+                status_rows.append({
+                    "Category": r.description,
+                    "Filename": r.filename,
+                    "Status": r.status.upper(),
+                    "Details": r.error_message or "Extracted cleanly",
+                })
+            st.table(status_rows)
 
-            # Progression Priorities Tab
-            tab_priorities, tab_endpoints, tab_files = st.tabs([
-                ":material/checklist: Progression Priorities",
-                ":material/network_check: Endpoint Status",
-                ":material/code: File Previews",
-            ])
-
-            with tab_priorities:
-                st.subheader("Recommended next steps")
-                priorities = summary.get("progression_priorities", [])
-                if priorities:
-                    for idx, item in enumerate(priorities, 1):
-                        with st.container(border=True):
-                            st.caption(f"Priority {idx}")
-                            st.markdown(item)
-                else:
-                    st.info("No specific progression recommendations generated for this profile.", icon=":material/info:")
-
-                st.caption("Note: Recommendations are derived using deterministic game logic. Progression data depends on enabled in-game API settings.")
-
-            with tab_endpoints:
-                st.markdown("**:material/network_check: Endpoint Extraction Status**")
-                status_rows = []
-                for cat, r in results.items():
-                    status_rows.append({
-                        "Category": r.description,
-                        "Filename": r.filename,
-                        "Status": r.status.upper(),
-                        "Details": r.error_message or "Extracted cleanly",
-                    })
-                st.table(status_rows)
-
-            with tab_files:
-                preview_category = st.selectbox(
-                    "Select file to inspect:",
-                    options=[k for k, v in results.items() if v.status == "success"],
-                    format_func=lambda k: f"{results[k].filename} ({results[k].description})",
-                )
-                if preview_category and results[preview_category].data is not None:
-                    st.json(results[preview_category].data, expanded=False)
+        with tab_files:
+            preview_category = st.selectbox(
+                "Select file to inspect:",
+                options=[k for k, v in results.items() if v.status == "success"],
+                format_func=lambda k: f"{results[k].filename} ({results[k].description})",
+            )
+            if preview_category and results[preview_category].data is not None:
+                st.json(results[preview_category].data, expanded=False)
     else:
-        st.info("Extract a profile in the Player Profile Backup tab to see metrics, recommendations, endpoint status, and file previews here.", icon=":material/analytics:")
+        st.info("Extract a profile in the Player Lookup tab to review detailed endpoint diagnostics and file previews.", icon=":material/analytics:")
 
 with tab_public:
     with st.container(border=True):
