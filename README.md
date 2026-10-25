@@ -12,7 +12,19 @@
 An open-source, on-demand data extraction utility and progression analyzer for Hypixel SkyBlock. Designed for personal character backups, progression tracking, and structured dataset export via the official Hypixel API v2.
 
 <p align="center">
-  <img src="assets/Screenshot.png" alt="Application Screenshot" width="800"/>
+  <a href="assets/profile-backup.png">
+    <img src="assets/profile-backup.png" alt="Player profile backup with profile selection, dataset options, and a successful extraction of all 12 datasets" width="1200"/>
+  </a>
+  <br/>
+  <sub>Player profile backup: select a profile and datasets, then extract a complete backup. Click to view full size.</sub>
+</p>
+
+<p align="center">
+  <a href="assets/profile-results.png">
+    <img src="assets/profile-results.png" alt="Profile results tab showing progression metrics, 12 acquired datasets, archive download, and recommended next steps" width="1200"/>
+  </a>
+  <br/>
+  <sub>Profile results: review progression metrics, download your archive, and explore recommended next steps. Click to view full size.</sub>
 </p>
 
 ---
@@ -100,7 +112,7 @@ The web application provides two distinct workflows:
 3. Select your target SkyBlock profile (e.g. Tomato, Apple, Ironman).
 4. Choose the categories to export.
 5. Click **Start Extraction**. Monitor real-time progress.
-6. Review calculated progression metrics and click **Download Archive** to download a complete ZIP package with SHA-256 integrity checksums.
+6. Open the **Profile results** tab to review progression metrics, recommendations, endpoint status, and file previews. Use the archive download button there to download a complete ZIP package with SHA-256 integrity checksums.
 
 #### Workflow B: Public Game Resources (Keyless)
 1. Navigate to the **Public Game Resources** tab.
@@ -169,7 +181,8 @@ Hypixel-SkyBlock-Profile-Extractor/
 │       └── tests.yml          # Automated CI testing matrix
 ├── assets/                    # Project visual branding and screenshots
 │   ├── logo.png
-│   └── Screenshot.png
+│   ├── profile-backup.png
+│   └── profile-results.png
 ├── docs/                      # Architectural and compliance documentation
 │   ├── API_USAGE.md           # API v2 specifications and policy matrix
 │   └── PERSONAL_API_APPLICATION.md # Dashboard application template

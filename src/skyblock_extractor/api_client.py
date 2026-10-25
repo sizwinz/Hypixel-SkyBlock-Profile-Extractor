@@ -55,6 +55,15 @@ def can_persist_key_to_disk() -> bool:
     return not is_hosted_environment()
 
 
+def is_streamlit_cloud() -> bool:
+    """Check if the application is specifically running on Streamlit Community Cloud."""
+    if os.environ.get("STREAMLIT_SHARING_MODE") or os.environ.get("IS_STREAMLIT_CLOUD"):
+        return True
+    if os.path.exists("/mount/src") and os.path.exists("/home/appuser"):
+        return True
+    return False
+
+
 class SkyBlockExtractorError(Exception):
     """Base exception for all SkyBlock Profile Extractor errors."""
 
