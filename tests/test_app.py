@@ -5,6 +5,15 @@ from streamlit.testing.v1 import AppTest
 APP_PATH = str(Path(__file__).resolve().parent.parent / "app.py")
 
 
+def test_page_uses_native_spacing_without_compact_css_overrides():
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+
+    assert not app.exception
+    assert not any("<style>" in element.value for element in app.get("html")), (
+        "Native typography and layout spacing must not be compressed by injected CSS"
+    )
+
+
 def test_player_lookup_batches_username_until_submit(monkeypatch):
     from unittest.mock import Mock
     from skyblock_extractor.api_client import HypixelAPIClient
