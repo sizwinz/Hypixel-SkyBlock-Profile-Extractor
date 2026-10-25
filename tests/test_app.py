@@ -89,6 +89,26 @@ def test_player_lookup_omits_redundant_cloud_banner_in_hosted_mode(monkeypatch):
     assert not app.exception
 
 
+def test_target_profile_card_metadata_omits_duplicate_profile_name():
+    app = AppTest.from_file(APP_PATH, default_timeout=15)
+    app.session_state.profiles = [
+        {
+            "id": "abc1234567890",
+            "name": "Tomato",
+            "game_mode": "normal",
+            "last_save": 1700000000000,
+            "selected": True,
+        }
+    ]
+    app.run()
+
+    captions = [c.value for c in app.caption]
+    assert any("**Mode:** Normal" in c for c in captions)
+    assert any("**Profile ID:**" in c for c in captions)
+    assert not any("**Profile Name:**" in c for c in captions)
+    assert not app.exception
+
+
 def test_app_desktop_mode_includes_api_key_input(monkeypatch):
     for var in [
         "HYPIXEL_API_KEY", "STREAMLIT_HOSTED", "MULTI_USER", "SERVER_NAME",
