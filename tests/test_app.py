@@ -27,7 +27,6 @@ def test_profile_results_live_in_their_own_top_level_tab():
     assert lookup.metric[0].value == "25"
     # Older AppTest versions include the parent tab in this collection.
     assert [tab.label for tab in results.tabs if tab.label != results.label] == [
-        ":material/checklist: Progression Priorities",
         ":material/network_check: Endpoint Status",
         ":material/code: File Previews",
     ]
