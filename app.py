@@ -38,6 +38,13 @@ from skyblock_extractor.exporter import ProfileExporter, PublicResourceExporter
 APP_VERSION = "2.1.0"
 
 
+def format_timestamp(ms: Optional[int], fmt: str = "%Y-%m-%d %H:%M") -> str:
+    """Safely format millisecond epoch timestamps."""
+    if not ms or ms <= 0:
+        return "Never"
+    return datetime.fromtimestamp(ms / 1000).strftime(fmt)
+
+
 def resolve_server_api_key() -> str:
     """Resolve pre-configured server API key from environment or Streamlit secrets."""
     key = os.environ.get("HYPIXEL_API_KEY", "").strip()
@@ -321,11 +328,7 @@ with tab_player:
             if st.session_state.profiles:
                 profile_choices = {}
                 for p in st.session_state.profiles:
-                    last_save_fmt = (
-                        datetime.fromtimestamp(p["last_save"] / 1000).strftime("%Y-%m-%d %H:%M")
-                        if p["last_save"] > 0
-                        else "Never"
-                    )
+                    last_save_fmt = format_timestamp(p.get("last_save"))
                     mode_tag = f"[{p['game_mode'].upper()}]" if p["game_mode"] != "normal" else ""
                     label = f"{p['name']} {mode_tag} - Last Save: {last_save_fmt}".strip()
                     profile_choices[label] = p
@@ -342,7 +345,9 @@ with tab_player:
                 with c_m1:
                     st.caption(f"**Mode:** {target_profile['game_mode'].capitalize()}")
                 with c_m2:
-                    st.caption(f"**Profile Name:** {target_profile['name']}")
+                    pid_raw = target_profile.get("id", "")
+                    pid_snippet = pid_raw[:8] + "..." if len(pid_raw) > 12 else (pid_raw or "N/A")
+                    st.caption(f"**Profile ID:** `{pid_snippet}`")
             else:
                 target_profile = None
                 st.caption("Search for a player above to choose a SkyBlock profile.")
