@@ -247,14 +247,6 @@ tab_player, tab_results, tab_public = st.tabs([
 ])
 
 with tab_player:
-    if (streamlit_cloud_mode or hosted_mode) and not effective_key:
-        st.info(
-            "Streamlit Community Cloud Deployment: In compliance with Hypixel Developer Policies, personal API keys are not collected "
-            "through web forms on public hosted sites. You can extract official public datasets (Items, Skills, Collections) under the "
-            "Public Game Resources tab, or deploy your own private copy to Streamlit Cloud / run locally for private player profile exports.",
-            icon=":material/cloud:",
-        )
-
     col_input, col_analytics = st.columns([1, 1], gap="medium")
 
     with col_input:

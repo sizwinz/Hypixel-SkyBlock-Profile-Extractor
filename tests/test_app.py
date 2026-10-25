@@ -79,6 +79,16 @@ def test_app_hosted_mode_omits_api_key_input(monkeypatch):
     assert not app.exception
 
 
+def test_player_lookup_omits_redundant_cloud_banner_in_hosted_mode(monkeypatch):
+    monkeypatch.setenv("STREAMLIT_HOSTED", "true")
+    monkeypatch.delenv("HYPIXEL_API_KEY", raising=False)
+
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+    player_tab = next(tab for tab in app.tabs if "Player Lookup" in tab.label)
+    assert not any("Streamlit Community Cloud Deployment" in info.value for info in player_tab.info)
+    assert not app.exception
+
+
 def test_app_desktop_mode_includes_api_key_input(monkeypatch):
     for var in [
         "HYPIXEL_API_KEY", "STREAMLIT_HOSTED", "MULTI_USER", "SERVER_NAME",
