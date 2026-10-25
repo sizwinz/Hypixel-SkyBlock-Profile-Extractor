@@ -64,8 +64,7 @@ Thank you for contributing! Our goal is to maintain a reliable, policy-compliant
 ```text
 ├── assets/                    # Project visual branding and screenshots
 ├── docs/                      # Architectural and compliance documentation
-│   ├── API_USAGE.md           # Hypixel API v2 architecture and compliance documentation
-│   └── PERSONAL_API_APPLICATION.md # Suggested re-application draft for Hypixel Developer Dashboard
+│   └── API_USAGE.md           # Hypixel API v2 architecture and compliance documentation
 ├── src/
 │   └── skyblock_extractor/    # Core Python library
 │       ├── __init__.py        # Package exports

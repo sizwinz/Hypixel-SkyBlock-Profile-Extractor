@@ -12,19 +12,11 @@
 An open-source, on-demand data extraction utility and progression analyzer for Hypixel SkyBlock. Designed for personal character backups, progression tracking, and structured dataset export via the official Hypixel API v2.
 
 <p align="center">
-  <a href="assets/profile-backup.png">
-    <img src="assets/profile-backup.png" alt="Player profile backup with profile selection, dataset options, and a successful extraction of all 12 datasets" width="1200"/>
+  <a href="assets/dashboard.png">
+    <img src="assets/dashboard.png" alt="SkyBlock Profile Extractor dashboard displaying player lookup, target profile, dataset options, progression analytics, and recommended next steps" width="1200"/>
   </a>
   <br/>
-  <sub>Player profile backup: select a profile and datasets, then extract a complete backup. Click to view full size.</sub>
-</p>
-
-<p align="center">
-  <a href="assets/profile-results.png">
-    <img src="assets/profile-results.png" alt="Profile results tab showing progression metrics, 12 acquired datasets, archive download, and recommended next steps" width="1200"/>
-  </a>
-  <br/>
-  <sub>Profile results: review progression metrics, download your archive, and explore recommended next steps. Click to view full size.</sub>
+  <sub>SkyBlock Profile Extractor interactive dashboard: lookup profiles, select datasets, inspect live progression metrics, and download complete archives. Click to view full size.</sub>
 </p>
 
 ---
@@ -180,12 +172,10 @@ Hypixel-SkyBlock-Profile-Extractor/
 │   └── workflows/
 │       └── tests.yml          # Automated CI testing matrix
 ├── assets/                    # Project visual branding and screenshots
-│   ├── logo.png
-│   ├── profile-backup.png
-│   └── profile-results.png
+│   ├── dashboard.png
+│   └── logo.png
 ├── docs/                      # Architectural and compliance documentation
-│   ├── API_USAGE.md           # API v2 specifications and policy matrix
-│   └── PERSONAL_API_APPLICATION.md # Dashboard application template
+│   └── API_USAGE.md           # API v2 specifications and policy matrix
 ├── src/
 │   └── skyblock_extractor/    # Core Python library
 │       ├── __init__.py        # Package exports and versioning
