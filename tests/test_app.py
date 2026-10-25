@@ -5,6 +5,36 @@ from streamlit.testing.v1 import AppTest
 APP_PATH = str(Path(__file__).resolve().parent.parent / "app.py")
 
 
+def test_profile_results_live_in_their_own_top_level_tab():
+    from skyblock_extractor.extractor import ExtractionResult
+
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+    results_tabs = [tab for tab in app.tabs if "Profile results" in tab.label]
+    assert len(results_tabs) == 1
+    assert any("Extract a profile" in message.value for message in results_tabs[0].info)
+
+    app.session_state.extraction_results = {
+        "profile": ExtractionResult("profile", "complete_profile.json", "Profile", "success", data={})
+    }
+    app.session_state.summary = {
+        "skill_average": 25,
+        "progression_priorities": ["Raise your farming skill."],
+    }
+    app.run()
+
+    results = next(tab for tab in app.tabs if "Profile results" in tab.label)
+    backup = next(tab for tab in app.tabs if "Player Profile Backup" in tab.label)
+    assert not backup.metric
+    assert results.metric[0].value == "25"
+    assert [tab.label for tab in results.tabs] == [
+        ":material/checklist: Progression Priorities",
+        ":material/network_check: Endpoint Status",
+        ":material/code: File Previews",
+    ]
+    assert any(item.value == "Raise your farming skill." for item in results.markdown)
+    assert not app.exception
+
+
 def test_page_uses_native_spacing_without_compact_css_overrides():
     app = AppTest.from_file(APP_PATH, default_timeout=15).run()
 

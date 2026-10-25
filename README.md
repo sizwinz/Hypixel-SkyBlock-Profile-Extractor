@@ -104,7 +104,7 @@ The web application provides two distinct workflows:
 3. Select your target SkyBlock profile (e.g. Tomato, Apple, Ironman).
 4. Choose the categories to export.
 5. Click **Start Extraction**. Monitor real-time progress.
-6. Review calculated progression metrics and click **Download Archive** to download a complete ZIP package with SHA-256 integrity checksums.
+6. Open the **Profile results** tab to review progression metrics, recommendations, endpoint status, and file previews. Use the archive download button there to download a complete ZIP package with SHA-256 integrity checksums.
 
 #### Workflow B: Public Game Resources (Keyless)
 1. Navigate to the **Public Game Resources** tab.
