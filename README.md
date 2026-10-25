@@ -12,11 +12,19 @@
 An open-source, on-demand data extraction utility and progression analyzer for Hypixel SkyBlock. Designed for personal character backups, progression tracking, and structured dataset export via the official Hypixel API v2.
 
 <p align="center">
-  <a href="assets/Screenshot.jpg">
-    <img src="assets/Screenshot.jpg" alt="SkyBlock profile results showing progression metrics, 8 successfully extracted datasets, archive download, and recommended next steps" width="1200"/>
+  <a href="assets/profile-backup.png">
+    <img src="assets/profile-backup.png" alt="Player profile backup with profile selection, dataset options, and a successful extraction of all 12 datasets" width="1200"/>
   </a>
   <br/>
-  <sub>Real profile results: progression metrics, a downloadable backup, and recommended next steps. Click to view full size.</sub>
+  <sub>Player profile backup: select a profile and datasets, then extract a complete backup. Click to view full size.</sub>
+</p>
+
+<p align="center">
+  <a href="assets/profile-results.png">
+    <img src="assets/profile-results.png" alt="Profile results tab showing progression metrics, 12 acquired datasets, archive download, and recommended next steps" width="1200"/>
+  </a>
+  <br/>
+  <sub>Profile results: review progression metrics, download your archive, and explore recommended next steps. Click to view full size.</sub>
 </p>
 
 ---
@@ -173,7 +181,8 @@ Hypixel-SkyBlock-Profile-Extractor/
 │       └── tests.yml          # Automated CI testing matrix
 ├── assets/                    # Project visual branding and screenshots
 │   ├── logo.png
-│   └── Screenshot.jpg
+│   ├── profile-backup.png
+│   └── profile-results.png
 ├── docs/                      # Architectural and compliance documentation
 │   ├── API_USAGE.md           # API v2 specifications and policy matrix
 │   └── PERSONAL_API_APPLICATION.md # Dashboard application template
