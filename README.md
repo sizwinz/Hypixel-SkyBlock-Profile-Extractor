@@ -12,7 +12,11 @@
 An open-source, on-demand data extraction utility and progression analyzer for Hypixel SkyBlock. Designed for personal character backups, progression tracking, and structured dataset export via the official Hypixel API v2.
 
 <p align="center">
-  <img src="assets/Screenshot.png" alt="Application Screenshot" width="800"/>
+  <a href="assets/Screenshot.jpg">
+    <img src="assets/Screenshot.jpg" alt="SkyBlock profile results showing progression metrics, 8 successfully extracted datasets, archive download, and recommended next steps" width="1200"/>
+  </a>
+  <br/>
+  <sub>Real profile results: progression metrics, a downloadable backup, and recommended next steps. Click to view full size.</sub>
 </p>
 
 ---
@@ -169,7 +173,7 @@ Hypixel-SkyBlock-Profile-Extractor/
 │       └── tests.yml          # Automated CI testing matrix
 ├── assets/                    # Project visual branding and screenshots
 │   ├── logo.png
-│   └── Screenshot.png
+│   └── Screenshot.jpg
 ├── docs/                      # Architectural and compliance documentation
 │   ├── API_USAGE.md           # API v2 specifications and policy matrix
 │   └── PERSONAL_API_APPLICATION.md # Dashboard application template
