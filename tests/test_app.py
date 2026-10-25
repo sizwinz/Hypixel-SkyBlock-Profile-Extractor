@@ -5,6 +5,68 @@ from streamlit.testing.v1 import AppTest
 APP_PATH = str(Path(__file__).resolve().parent.parent / "app.py")
 
 
+def test_profile_results_live_in_their_own_top_level_tab():
+    from skyblock_extractor.extractor import ExtractionResult
+
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+    results_tabs = [tab for tab in app.tabs if "Profile results" in tab.label]
+    assert len(results_tabs) == 1
+    assert any("Extract a profile" in message.value for message in results_tabs[0].info)
+
+    app.session_state.extraction_results = {
+        "profile": ExtractionResult("profile", "complete_profile.json", "Profile", "success", data={})
+    }
+    app.session_state.summary = {
+        "skill_average": 25,
+        "progression_priorities": ["Raise your farming skill."],
+    }
+    app.run()
+
+    results = next(tab for tab in app.tabs if "Profile results" in tab.label)
+    backup = next(tab for tab in app.tabs if "Player Profile Backup" in tab.label)
+    assert not backup.metric
+    assert results.metric[0].value == "25"
+    assert [tab.label for tab in results.tabs] == [
+        ":material/checklist: Progression Priorities",
+        ":material/network_check: Endpoint Status",
+        ":material/code: File Previews",
+    ]
+    assert any(item.value == "Raise your farming skill." for item in results.markdown)
+    assert not app.exception
+
+
+def test_page_uses_native_spacing_without_compact_css_overrides():
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+
+    assert not app.exception
+    assert not any("<style>" in element.value for element in app.get("html")), (
+        "Native typography and layout spacing must not be compressed by injected CSS"
+    )
+
+
+def test_player_lookup_batches_username_until_submit(monkeypatch):
+    from unittest.mock import Mock
+    from skyblock_extractor.api_client import HypixelAPIClient
+
+    monkeypatch.setenv("HYPIXEL_API_KEY", "test-key")
+    resolve_player = Mock(return_value=("player-uuid", "playeruuid"))
+    fetch_profiles = Mock(return_value=[])
+    monkeypatch.setattr(HypixelAPIClient, "get_player_uuid", resolve_player)
+    monkeypatch.setattr(HypixelAPIClient, "get_skyblock_profiles", fetch_profiles)
+
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+    lookup = app.get("form")
+    assert len(lookup) == 1, "Player lookup should be one submit-based form"
+    username = lookup[0].text_input[0]
+    username.set_value("  TestPlayer  ")
+    resolve_player.assert_not_called()
+    lookup[0].button[0].click().run()
+
+    resolve_player.assert_called_once_with("TestPlayer")
+    fetch_profiles.assert_called_once_with("player-uuid")
+    assert not app.exception
+
+
 def test_app_hosted_mode_omits_api_key_input(monkeypatch):
     monkeypatch.setenv("STREAMLIT_HOSTED", "true")
     monkeypatch.delenv("HYPIXEL_API_KEY", raising=False)

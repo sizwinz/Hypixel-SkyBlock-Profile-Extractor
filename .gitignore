@@ -28,4 +28,6 @@ Thumbs.db
 # Agent Planning & Local State
 .planning/
 .ai/
+.agents/
+.claude/
 scratch/
