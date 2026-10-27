@@ -104,31 +104,46 @@ with st.sidebar:
     key_file = Path("api_key.txt")
     file_key = ""
 
-    if streamlit_cloud_mode or hosted_mode:
-        api_key_input = ""
-        effective_key = server_key
+    server_key_failed = st.session_state.get("server_key_failed", False)
 
-        if server_key:
+    if streamlit_cloud_mode or hosted_mode:
+        if server_key and not server_key_failed:
             with st.container(border=True):
                 st.markdown("**:material/cloud_done: Server Credentials Active**")
                 st.caption("Running with pre-configured server credentials. Profile queries are authenticated securely.")
-        elif streamlit_cloud_mode:
+                with st.expander("**:material/key: Custom API Key (optional)**", expanded=False):
+                    st.caption("If the server key is expired, rate-limited, or not working, provide your personal API key here.")
+                    ui_key = st.text_input(
+                        "Personal API Key",
+                        type="password",
+                        key="hosted_custom_api_key",
+                        help="Your personal Hypixel API key from developer.hypixel.net. Held in session memory only.",
+                    )
+            effective_key = ui_key.strip() if ui_key.strip() else server_key
+        elif server_key and server_key_failed:
             with st.container(border=True):
-                st.markdown("**:material/cloud: Streamlit Community Cloud**")
-                st.caption(
-                    "This public instance is hosted on Streamlit Community Cloud. "
-                    "Under Hypixel Developer Policies, personal API keys are not collected through web forms on public hosted sites.\n\n"
-                    "- **Public Schemas**: You can extract unauthenticated Items, Skills, and Collections schemas under the Public Game Resources tab.\n"
-                    "- **Private Player Profiles**: Fork this repository and deploy your own private Streamlit Cloud app (adding your key in App Secrets) or run locally."
+                st.markdown("**:material/key_off: Server Key Failed**")
+                st.caption("The pre-configured server key failed authentication. Please provide your personal Hypixel API key below to continue.")
+                ui_key = st.text_input(
+                    "Hypixel API Key",
+                    type="password",
+                    key="hosted_failed_server_api_key",
+                    help="Your personal Hypixel API key from developer.hypixel.net. Held in session memory only.",
                 )
+            effective_key = ui_key.strip()
         else:
             with st.container(border=True):
-                st.markdown("**:material/lock: Hosted Multi-User Mode**")
+                st.markdown("**:material/key: Hypixel API Key**")
                 st.caption(
-                    "Under Hypixel Developer Policies, personal API keys must not be collected through hosted web forms. "
-                    "You can extract unauthenticated Public Game Resources (Items, Skills, Collections) in the Public Resources tab, "
-                    "or run this tool locally on your own machine to query profiles using a personal API key."
+                    "No pre-configured server key found. Enter your personal Hypixel API key from developer.hypixel.net to query player profiles."
                 )
+                ui_key = st.text_input(
+                    "Hypixel API Key",
+                    type="password",
+                    key="hosted_personal_api_key",
+                    help="Personal API key from developer.hypixel.net. Held in transient browser session memory.",
+                )
+            effective_key = ui_key.strip()
     else:
         if allow_storage and key_file.exists():
             try:

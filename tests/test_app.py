@@ -81,16 +81,16 @@ def test_player_lookup_batches_username_until_submit(monkeypatch):
     assert not app.exception
 
 
-def test_app_hosted_mode_omits_api_key_input(monkeypatch):
+def test_app_hosted_mode_allows_api_key_input_when_env_key_absent(monkeypatch):
     monkeypatch.setenv("STREAMLIT_HOSTED", "true")
     monkeypatch.delenv("HYPIXEL_API_KEY", raising=False)
 
     app = AppTest.from_file(APP_PATH, default_timeout=15)
     app.run()
 
-    # Under hosted mode, personal API key input must NOT exist
+    # When env key is absent or not working, people can put their key from the UI
     labels = [t.label for t in app.text_input]
-    assert "Hypixel API Key" not in labels
+    assert any("API Key" in label for label in labels)
     assert not app.exception
 
 
