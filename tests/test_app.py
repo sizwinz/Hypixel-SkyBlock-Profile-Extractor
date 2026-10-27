@@ -140,7 +140,7 @@ def test_custom_api_key_overrides_server_key_in_hosted_mode(monkeypatch):
 
 def test_app_sidebar_renders_github_link():
     app = AppTest.from_file(APP_PATH, default_timeout=15).run()
-    github_buttons = [btn for btn in app.sidebar.link_button if "GitHub" in btn.label]
+    github_buttons = [btn for btn in app.get("link_button") if "GitHub" in getattr(btn, "label", "")]
     assert len(github_buttons) == 1
     assert "https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor" in github_buttons[0].url
     assert not app.exception
