@@ -36,6 +36,7 @@ from skyblock_extractor.analysis import ProfileAnalyzer
 from skyblock_extractor.exporter import ProfileExporter, PublicResourceExporter
 
 APP_VERSION = "2.1.0"
+GITHUB_REPO_URL = "https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor"
 
 
 def format_timestamp(ms: Optional[int], fmt: str = "%Y-%m-%d %H:%M") -> str:
@@ -63,6 +64,11 @@ st.set_page_config(
     page_icon="assets/logo.png",
     layout="wide",
     initial_sidebar_state="expanded",
+    menu_items={
+        "Get Help": GITHUB_REPO_URL,
+        "Report a bug": f"{GITHUB_REPO_URL}/issues",
+        "About": f"SkyBlock Profile Extractor v{APP_VERSION} - {GITHUB_REPO_URL}",
+    },
 )
 
 st.logo("assets/logo.png", size="medium")
@@ -248,6 +254,12 @@ with st.sidebar:
         """)
 
     st.divider()
+    st.link_button(
+        "GitHub Repository",
+        GITHUB_REPO_URL,
+        icon=":material/code:",
+        width="stretch",
+    )
     st.caption(f"SkyBlock Profile Extractor v{APP_VERSION}")
     st.caption("Not affiliated with or endorsed by Hypixel Inc.")
 

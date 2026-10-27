@@ -15,8 +15,10 @@
       <a href="https://developer.hypixel.net/"><img src="https://img.shields.io/badge/Hypixel%20API-v2%20Compliant-22C55E?style=flat-square" alt="Hypixel API v2 Compliant" /></a>
       <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22C55E?style=flat-square" alt="MIT License" /></a>
       <a href="https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor/releases"><img src="https://img.shields.io/badge/release-v2.1.0-0078D4?style=flat-square" alt="Release v2.1.0" /></a>
+      <a href="https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor"><img src="https://img.shields.io/badge/GitHub-Repository-181717?style=flat-square&logo=github" alt="GitHub Repository" /></a>
       <br><br>
       <a href="#usage"><img src="https://img.shields.io/badge/LAUNCH-WEB%20APP-2563EB?style=for-the-badge&logo=streamlit&logoColor=white" alt="Launch Web App" /></a>
+      <a href="https://github.com/sizwinz/Hypixel-SkyBlock-Profile-Extractor.git"><img src="https://img.shields.io/badge/GITHUB-REPOSITORY-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Repository" /></a>
     </td>
   </tr>
 </table>
