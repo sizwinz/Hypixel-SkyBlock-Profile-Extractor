@@ -92,6 +92,8 @@ if "public_zip_filename" not in st.session_state:
     st.session_state.public_zip_filename = None
 if "public_outcome" not in st.session_state:
     st.session_state.public_outcome = None
+if "server_key_failed" not in st.session_state:
+    st.session_state.server_key_failed = False
 
 # --- SIDEBAR: AUTHENTICATION, GUIDES & POLICIES ---
 with st.sidebar:
@@ -162,7 +164,7 @@ with st.sidebar:
                 help="Personal API Key from developer.hypixel.net. Stored in memory on your local machine.",
             )
 
-            effective_key = api_key_input.strip() or server_key
+            effective_key = api_key_input.strip() or (server_key if not server_key_failed else "")
 
             if allow_storage:
                 save_key = st.checkbox("Persist key locally to api_key.txt", value=bool(file_key))
@@ -328,7 +330,14 @@ with tab_player:
                             st.error(f"Player resolution error: {e}", icon=":material/error:")
                             st.session_state.profiles = None
                         except AuthenticationError as e:
-                            st.error(f"Authentication error: {e}", icon=":material/error:")
+                            if server_key and effective_key == server_key:
+                                st.session_state.server_key_failed = True
+                                st.error(
+                                    f"Authentication error: {e}. The server API key is not working. Please enter your personal Hypixel API key in the sidebar Configuration.",
+                                    icon=":material/key_off:",
+                                )
+                            else:
+                                st.error(f"Authentication error: {e}", icon=":material/error:")
                             st.session_state.profiles = None
                         except RateLimitExceededError as e:
                             st.error(f"Rate limit exceeded: {e}", icon=":material/error:")

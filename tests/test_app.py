@@ -94,6 +94,50 @@ def test_app_hosted_mode_allows_api_key_input_when_env_key_absent(monkeypatch):
     assert not app.exception
 
 
+def test_server_key_auth_failure_marks_server_key_failed_and_enables_ui_input(monkeypatch):
+    from unittest.mock import Mock
+    from skyblock_extractor.api_client import HypixelAPIClient, AuthenticationError
+
+    monkeypatch.setenv("STREAMLIT_HOSTED", "true")
+    monkeypatch.setenv("HYPIXEL_API_KEY", "bad-env-key")
+
+    mock_get_uuid = Mock(side_effect=AuthenticationError("Invalid API key"))
+    monkeypatch.setattr(HypixelAPIClient, "get_player_uuid", mock_get_uuid)
+
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+    lookup = app.get("form")[0]
+    lookup.text_input[0].set_value("TestPlayer")
+    lookup.button[0].click().run()
+
+    assert app.session_state.server_key_failed is True
+    assert any("server API key is not working" in err.value for err in app.error)
+    assert not app.exception
+
+
+def test_custom_api_key_overrides_server_key_in_hosted_mode(monkeypatch):
+    from unittest.mock import Mock
+    from skyblock_extractor.api_client import HypixelAPIClient
+
+    monkeypatch.setenv("STREAMLIT_HOSTED", "true")
+    monkeypatch.setenv("HYPIXEL_API_KEY", "server-env-key")
+
+    mock_client_init = Mock(return_value=None)
+    monkeypatch.setattr(HypixelAPIClient, "__init__", mock_client_init)
+    monkeypatch.setattr(HypixelAPIClient, "get_player_uuid", Mock(return_value=("uuid", "uuid")))
+    monkeypatch.setattr(HypixelAPIClient, "get_skyblock_profiles", Mock(return_value=[]))
+
+    app = AppTest.from_file(APP_PATH, default_timeout=15).run()
+    custom_key_inputs = [t for t in app.sidebar.text_input if "Personal API Key" in t.label or "API Key" in t.label]
+    assert len(custom_key_inputs) == 1
+    custom_key_inputs[0].set_value("user-override-key")
+    lookup = app.get("form")[0]
+    lookup.text_input[0].set_value("TestPlayer")
+    lookup.button[0].click().run()
+
+    mock_client_init.assert_called_with(api_key="user-override-key")
+    assert not app.exception
+
+
 def test_player_lookup_omits_redundant_cloud_banner_in_hosted_mode(monkeypatch):
     monkeypatch.setenv("STREAMLIT_HOSTED", "true")
     monkeypatch.delenv("HYPIXEL_API_KEY", raising=False)
